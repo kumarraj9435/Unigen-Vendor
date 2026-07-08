@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Vendor Order Tracker</title>
+<meta name="theme-color" content="#1E4FD8" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%231E4FD8%22/></svg>" />
+<style>
+  html, body { margin: 0; padding: 0; background: #EEF3FC; }
+  * { box-sizing: border-box; }
+  body { -webkit-tap-highlight-color: transparent; }
+  #root { max-width: 1180px; margin: 0 auto; padding: 10px; }
+  @media (min-width: 700px) { #root { padding: 22px; } }
+  select, input, button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #B7CDF9; border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div style="color:#425578;font-family:sans-serif;padding:40px;text-align:center;font-size:14px;">Loading Vendor Order Tracker…</div>
+</div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js" crossorigin></script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+function IconBase({ children, size = 16, color = "currentColor", strokeWidth = 2, style }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0, ...style }}
+    >
+      {children}
+    </svg>
+  );
+}
+
+function Plus(props) {
+  return <IconBase {...props}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></IconBase>;
+}
+function X(props) {
+  return <IconBase {...props}><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></IconBase>;
+}
+function Trash2(props) {
+  return (
+    <IconBase {...props}>
+      <polyline points="4,7 20,7" />
+      <path d="M6 7l1 14h10l1-14" />
+      <path d="M9 7V4h6v3" />
+      <line x1="10" y1="11" x2="10" y2="18" />
+      <line x1="14" y1="11" x2="14" y2="18" />
+    </IconBase>
+  );
+}
+function Pencil(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 20l4.2-1 10.3-10.3a1.8 1.8 0 0 0 0-2.5l-1.7-1.7a1.8 1.8 0 0 0-2.5 0L4 14.8 3 19z" />
+      <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+    </IconBase>
+  );
+}
+function Search(props) {
+  return <IconBase {...props}><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.2" y2="16.2" /></IconBase>;
+}
+function LayoutDashboard(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
+    </IconBase>
+  );
+}
+function ClipboardList(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <rect x="8.5" y="2.5" width="7" height="3" rx="1" />
+      <line x1="8" y1="11" x2="16" y2="11" />
+      <line x1="8" y1="15" x2="16" y2="15" />
+      <line x1="8" y1="19" x2="13" y2="19" />
+    </IconBase>
+  );
+}
+function Users(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5" />
+      <circle cx="17" cy="9" r="2.4" />
+      <path d="M15.5 14.3c2.6.4 4.5 2.4 4.5 5.2" />
+    </IconBase>
+  );
+}
+function Truck(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="2" y="7" width="12" height="9" rx="1" />
+      <path d="M14 10h4l3 3v3h-7z" />
+      <circle cx="6.5" cy="18" r="1.6" />
+      <circle cx="16.5" cy="18" r="1.6" />
+    </IconBase>
+  );
+}
+function CheckCircle2(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="8,12.5 11,15.5 16,9" />
+    </IconBase>
+  );
+}
+function Clock(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12,7 12,12 16,14" />
+    </IconBase>
+  );
+}
+function AlertTriangle(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 3.5 21.5 20h-19z" />
+      <line x1="12" y1="9.5" x2="12" y2="14" />
+      <circle cx="12" cy="17" r="0.6" fill={props.color || "currentColor"} stroke="none" />
+    </IconBase>
+  );
+}
+function Package(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3.5 7.5 12 3l8.5 4.5V16.5L12 21l-8.5-4.5z" />
+      <polyline points="3.5,7.5 12,12 20.5,7.5" />
+      <line x1="12" y1="12" x2="12" y2="21" />
+      <line x1="7.7" y1="5.3" x2="16.3" y2="9.9" />
+    </IconBase>
+  );
+}
+function PackageCheck(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3.5 7.5 12 3l8.5 4.5V16.5L12 21l-8.5-4.5z" />
+      <polyline points="3.5,7.5 12,12 20.5,7.5" />
+      <line x1="12" y1="12" x2="12" y2="21" />
+      <polyline points="9.3,13.6 11.2,15.6 15,11.6" />
+    </IconBase>
+  );
+}
+function Save(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 3h11l3 3v15H5z" />
+      <rect x="8" y="3" width="7" height="5" />
+      <rect x="7" y="13" width="10" height="7" />
+    </IconBase>
+  );
+}
+function SettingsIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7" />
+    </IconBase>
+  );
+}
+function RefreshCw(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M20 11a8 8 0 0 0-14.6-4.4M4 5v5h5" />
+      <path d="M4 13a8 8 0 0 0 14.6 4.4M20 19v-5h-5" />
+    </IconBase>
+  );
+}
+function Cloud(props) {
+  return <IconBase {...props}><path d="M7 18h10a4 4 0 0 0 .6-7.95 5.5 5.5 0 0 0-10.7 1.1A3.75 3.75 0 0 0 7 18z" /></IconBase>;
+}
+function CloudOff(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M8.3 8.4A5.5 5.5 0 0 1 17.6 10.05 4 4 0 0 1 17 18H8.5" />
+      <path d="M5.5 12.2A4 4 0 0 0 7 20h9" opacity="0.001" />
+      <line x1="3" y1="3" x2="21" y2="21" />
+    </IconBase>
+  );
+}
+function CloudUpload(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M7 17h10a4 4 0 0 0 .6-7.95 5.5 5.5 0 0 0-10.7 1.1A3.75 3.75 0 0 0 7 17z" />
+      <polyline points="9.5,14 12,11.5 14.5,14" />
+      <line x1="12" y1="11.5" x2="12" y2="19" />
+    </IconBase>
+  );
+}
+
+
+// UNIGEN brand theme — bright blue + white, same look on login screen aur
+// poore app me (header, cards, buttons sab isi palette se aate hai).
+const COLORS = {
+  bg: "#EEF3FC",
+  panel: "#FFFFFF",
+  panelAlt: "#F3F7FE",
+  panelSoft: "#E7EEFC",
+  border: "#D7E2F7",
+  borderSoft: "#E4ECFB",
+  text: "#0F1E3D",
+  textDim: "#425578",
+  textMuted: "#7C8AAD",
+  amber: "#2F6FED",
+  amberBg: "#E5EEFE",
+  amberBorder: "#B7CDF9",
+  green: "#16A34A",
+  greenBg: "#E7F7ED",
+  greenBorder: "#A9E2BE",
+  red: "#E1352F",
+  redBg: "#FCE9E8",
+  redBorder: "#F3B7B4",
+  blue: "#2F6FED",
+  blueBg: "#E5EEFE",
+  blueBorder: "#B7CDF9",
+  orange: "#F59E0B",
+  orangeBg: "#FDF1DC",
+  orangeBorder: "#F5D093",
+  // Brand blue gradient (login screen background, top header bar)
+  brandFrom: "#1E4FD8",
+  brandTo: "#2F7BF0",
+};
+
+const LOGO_DATA_URI = "data:image/png;base64,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";
+
+
+// Default login user — pehli baar app khulega to yahi username/password kaam karega.
+// "User Details" sheet se connect hone ke baad, sheet me diye users hi asli source bann jaate hain.
+const SEED_USERS = [
+  { username: "unigen", password: "Unigen@123", name: "Admin" },
+];
+
+// Yeh Apps Script Web App URL hardcoded hai, taaki koi bhi is file ko kahi bhi
+// (GitHub, GitHub Pages, kisi ke bhi browser me) khole, wo automatically
+// isi Google Sheet se connect ho jaye — Settings me manually URL daalne ki
+// zaroorat na pade.
+const DEFAULT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyL3Fx3LWB1PsfXoV4J_cS3DVBUeA6blk-ET0EXNTdLK0QmOyHDbe5An_jIaJ1NkxZTcg/exec";
+
+const SEED_VENDORS = [
+  { name: "Indo-Chin Wazirpur", contact: "" },
+  { name: "Hive Electronics Noida", contact: "9999002570" },
+  { name: "Shervan Electronic Noida", contact: "8287472906" },
+  { name: "Sanjeev Ji HDMI", contact: "9810193302" },
+  { name: "GTB, Bawana", contact: "" },
+  { name: "Khan Sahab", contact: "9811624215" },
+  { name: "Mohit Sir Dabbi", contact: "9811690606" },
+  { name: "Ankit Packaging Solution", contact: "01149425106" },
+  { name: "Classic Umbrella", contact: "" },
+  { name: "Ayush Sir Micro Fibre", contact: "" },
+  { name: "Inderlok Box", contact: "9213479129" },
+  { name: "Mihir Trading Mumbai", contact: "" },
+  { name: "Sanya Blister Mayapuri", contact: "8287472906" },
+  { name: "Myra Digital - Okhla", contact: "" },
+  { name: "Car Duster Bawana", contact: "8585953880" },
+  { name: "Padam Noida", contact: "9654702622" },
+  { name: "KITES AIR INTERNATIONAL LLP", contact: "" },
+  { name: "Sakshi Enterprises", contact: "" },
+];
+
+const SEED_PRODUCTS = [
+  "125W CAR CHARGER", "20W PD AD", "20W PD AD C TO L", "20W PD AD C TO C",
+  "25W SUMSUNG C TO C", "25W TYPE-C SAMSUNG", "75W CAR CHARGER BLACK",
+  "80W SUPERVOOC AD", "Cables A to C", "100W Supervooc Charger",
+  "44W VIVO CHARGER", "68W MOTOROLA AD C TO C", "80W CAR CHARGER STEEL",
+  "80W CAR CHARGER WHITE", "65W NOTHING AD", "45W NOTHING AD",
+  "HDMI CABLE 1.5M", "HDMI CABLE 3M", "Ethernet cable 10M", "Ethernet cable 5M",
+  "Ethernet cable 3M", "Power cable Desktop", "Power cable Laptop",
+  "65W Laptop charger Type-C 1.2M", "Patli pin 1.2M", "3 PIN MULTI PLUG",
+  "TYPE-C TRAVEL ADAPTER", "OTUM TRAVEL ADAPTER WT", "OTUM TRAVEL ADAPTER BK",
+  "UK3PINPLUG", "16amp 3 way Multi plug", "Boat multi plug (LED)",
+  "3 Fold 21.5-Inch Black Umbrella", "2 Fold 24-Inch Black Umbrella",
+  "2 Fold 21-Inch Black Umbrella",
+];
+
+// Vendor Details Google Sheet ("Products Detsils" tab) me jo mapping thi (kis product ko
+// kaun se vendor(s) banate/supply karte hai, aur uski packing kaun se vendor se aati hai)
+// wahi yaha seed kar di gayi hai. Baad me Products tab se yeh edit ki ja sakti hai.
+const PRODUCT_MAP = {
+  "125W CAR CHARGER": { vendors: ["Indo-Chin Wazirpur"], packingVendors: ["Mohit Sir Dabbi"] },
+  "20W PD AD": { vendors: ["Indo-Chin Wazirpur", "KITES AIR INTERNATIONAL LLP"], packingVendors: ["Ayush Sir Micro Fibre"] },
+  "20W PD AD C TO L": { vendors: ["Hive Electronics Noida", "KITES AIR INTERNATIONAL LLP"], packingVendors: [] },
+  "20W PD AD C TO C": { vendors: ["Hive Electronics Noida", "KITES AIR INTERNATIONAL LLP"], packingVendors: [] },
+  "25W SUMSUNG C TO C": { vendors: ["Indo-Chin Wazirpur"], packingVendors: [] },
+  "25W TYPE-C SAMSUNG": { vendors: ["Indo-Chin Wazirpur"], packingVendors: [] },
+  "75W CAR CHARGER BLACK": { vendors: ["Indo-Chin Wazirpur"], packingVendors: ["Mohit Sir Dabbi"] },
+  "80W SUPERVOOC AD": { vendors: ["Indo-Chin Wazirpur"], packingVendors: ["Ayush Sir Micro Fibre"] },
+  "Cables A to C": { vendors: ["KITES AIR INTERNATIONAL LLP"], packingVendors: [] },
+  "100W Supervooc Charger": { vendors: ["Indo-Chin Wazirpur", "KITES AIR INTERNATIONAL LLP"], packingVendors: [] },
+  "44W VIVO CHARGER": { vendors: ["Indo-Chin Wazirpur", "KITES AIR INTERNATIONAL LLP"], packingVendors: [] },
+  "68W MOTOROLA AD C TO C": { vendors: ["Indo-Chin Wazirpur"], packingVendors: [] },
+  "80W CAR CHARGER STEEL": { vendors: ["Indo-Chin Wazirpur"], packingVendors: ["Mohit Sir Dabbi"] },
+  "80W CAR CHARGER WHITE": { vendors: ["Indo-Chin Wazirpur"], packingVendors: ["Mohit Sir Dabbi"] },
+  "65W NOTHING AD": { vendors: ["Indo-Chin Wazirpur"], packingVendors: [] },
+  "45W NOTHING AD": { vendors: ["Indo-Chin Wazirpur", "Hive Electronics Noida"], packingVendors: [] },
+  "HDMI CABLE 1.5M": { vendors: ["Sanjeev Ji HDMI", "Shervan Electronic Noida"], packingVendors: ["GTB, Bawana"] },
+  "HDMI CABLE 3M": { vendors: ["Sanjeev Ji HDMI", "Shervan Electronic Noida"], packingVendors: ["GTB, Bawana"] },
+  "Ethernet cable 10M": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "Ethernet cable 5M": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "Ethernet cable 3M": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "Power cable Desktop": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "Power cable Laptop": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "65W Laptop charger Type-C 1.2M": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "Patli pin 1.2M": { vendors: ["Sanjeev Ji HDMI"], packingVendors: [] },
+  "3 PIN MULTI PLUG": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "TYPE-C TRAVEL ADAPTER": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "OTUM TRAVEL ADAPTER WT": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "OTUM TRAVEL ADAPTER BK": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "UK3PINPLUG": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "16amp 3 way Multi plug": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "Boat multi plug (LED)": { vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  "3 Fold 21.5-Inch Black Umbrella": { vendors: ["Classic Umbrella"], packingVendors: [] },
+  "2 Fold 24-Inch Black Umbrella": { vendors: ["Classic Umbrella"], packingVendors: [] },
+  "2 Fold 21-Inch Black Umbrella": { vendors: ["Classic Umbrella"], packingVendors: [] },
+};
+
+const EXTRA_SEED_PRODUCTS = [
+  { name: "45W Google AD", vendors: ["Padam Noida", "Myra Digital - Okhla"], packingVendors: ["Mohit Sir Dabbi"] },
+  { name: "30W Google AD", vendors: ["Padam Noida", "Myra Digital - Okhla"], packingVendors: ["Ayush Sir Micro Fibre"] },
+  { name: "Micro Fibre Duster", vendors: ["Ayush Sir Micro Fibre"], packingVendors: [] },
+  { name: "Extension Board", vendors: ["Mihir Trading Mumbai"], packingVendors: [] },
+  { name: "Car Duster", vendors: ["Car Duster Bawana"], packingVendors: [] },
+];
+
+const SEED_PRODUCT_OBJS = [
+  ...SEED_PRODUCTS.map(name => ({
+    name,
+    note: "",
+    vendors: (PRODUCT_MAP[name] && PRODUCT_MAP[name].vendors) || [],
+    packingVendors: (PRODUCT_MAP[name] && PRODUCT_MAP[name].packingVendors) || [],
+  })),
+  ...EXTRA_SEED_PRODUCTS.map(p => ({ name: p.name, note: "", vendors: p.vendors, packingVendors: p.packingVendors })),
+];
+
+// Packing items master list (Dabbi/Tray, Sticker, Carton, etc.) — packing entries me
+// yehi list dikhegi. Naya packing item bhi Packing tab se add ho sakta hai.
+const SEED_PACKING_ITEMS = [
+  "Dabbi/Tray", "Sticker", "Warranty Card", "Corrugated Carton", "Master Carton",
+  "Blister Pack", "Poly Bag", "Manual / Instruction Sheet", "Micro Fibre Cloth",
+].map(name => ({ name, note: "", vendors: [] }));
+
+const SEED_ENTRIES = [
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "45W Nothing AD", orderQty: 1446, orderDate: "2026-05-19", expectedDate: "", receivedQty: 1446, receivedDate: "2026-05-28", remark: "" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "45W Nothing AD", orderQty: 1470, orderDate: "", expectedDate: "", receivedQty: 1470, receivedDate: "2026-05-21", remark: "Packaging Dabbi/Tray" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "Sticker", orderQty: 3024, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "2026-05-27", remark: "Packaging" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "Warranty Card", orderQty: 1550, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "2026-05-27", remark: "Packaging" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "20W C to C", orderQty: 1300, orderDate: "2026-06-10", expectedDate: "", receivedQty: 1300, receivedDate: "2026-06-18", remark: "" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "20W C to L", orderQty: 1000, orderDate: "2026-06-10", expectedDate: "", receivedQty: 1000, receivedDate: "2026-06-18", remark: "" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "20W C to C", orderQty: 1300, orderDate: "", expectedDate: "", receivedQty: 1300, receivedDate: "2026-06-12", remark: "Packaging Dabbi/Tray" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "20W C to L", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: 1000, receivedDate: "2026-06-12", remark: "Packaging Dabbi/Tray" },
+  { vendor: "Hive Electronics Noida", contact: "9999002570", product: "Stickers", orderQty: 2446, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "2026-06-12", remark: "Packaging" },
+  { vendor: "Shervan Electronic Noida", contact: "8287472906", product: "HDMI Cable", orderQty: "3000 pcs", orderDate: "2026-04-15", expectedDate: "2026-04-20", receivedQty: 504, receivedDate: "2026-04-18", remark: "packaging; 81 pcs = Rs 9027 refund" },
+  { vendor: "Shervan Electronic Noida", contact: "8287472906", product: "HDMI Cable", orderQty: "", orderDate: "", expectedDate: "", receivedQty: 2415, receivedDate: "2026-04-21", remark: "second batch received" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable 3M Braided", orderQty: 2500, orderDate: "", expectedDate: "", receivedQty: 415, receivedDate: "2026-06-10", remark: "June plan" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable 3M Braided", orderQty: "", orderDate: "", expectedDate: "", receivedQty: 1078, receivedDate: "2026-06-15", remark: "" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable 3M Braided", orderQty: "", orderDate: "", expectedDate: "", receivedQty: 686, receivedDate: "2026-06-22", remark: "" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable 1.5M Braided", orderQty: 1500, orderDate: "", expectedDate: "", receivedQty: 612, receivedDate: "2026-06-10", remark: "June plan" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable 1.5M Braided", orderQty: "", orderDate: "", expectedDate: "", receivedQty: 747, receivedDate: "2026-06-15", remark: "" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable 1.5M Braided", orderQty: "", orderDate: "", expectedDate: "", receivedQty: 403, receivedDate: "2026-06-22", remark: "" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI Cable Braided", orderQty: 4020, orderDate: "", expectedDate: "2026-06-08", receivedQty: "", receivedDate: "", remark: "Packaging" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Master carton (medium/big)", orderQty: 120, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Packaging" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Stickers", orderQty: 8050, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Packaging" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI CABLE 1.5M", orderQty: 2600, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, upcoming Tuesday" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "HDMI CABLE 3M", orderQty: 3800, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, upcoming Tuesday; add 500pcs new" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Ethernet cable 10M", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, upcoming Tuesday" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Ethernet cable 5M", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, ready" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Ethernet cable 3M", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, ready" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Power cable Desktop", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, ready" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Power cable Laptop", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan, ready" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "65W Laptop charger Type-C 1.2M", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan" },
+  { vendor: "Sanjeev Ji HDMI", contact: "9810193302", product: "Patli pin 1.2M", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July plan" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "25W Dual Charger", orderQty: 10000, orderDate: "", expectedDate: "2026-02-23", receivedQty: 0, receivedDate: "", remark: "" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "80W SuperVOOC Charger", orderQty: 10000, orderDate: "", expectedDate: "2026-02-27", receivedQty: 5257, receivedDate: "", remark: "" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "100W SuperVOOC Charger", orderQty: 10000, orderDate: "", expectedDate: "2026-02-27", receivedQty: 5250, receivedDate: "", remark: "" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "20W Charger with C to C Cable", orderQty: 10000, orderDate: "", expectedDate: "", receivedQty: 10984, receivedDate: "", remark: "" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "25W Dual Charger", orderQty: 10000, orderDate: "", expectedDate: "2026-02-23", receivedQty: 10530, receivedDate: "2026-02-23", remark: "pending batch complete" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "80W SuperVOOC Charger", orderQty: 4743, orderDate: "", expectedDate: "2026-02-27", receivedQty: 4905, receivedDate: "2026-02-26", remark: "pending batch complete" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "100W SuperVOOC Charger", orderQty: 4750, orderDate: "", expectedDate: "2026-02-27", receivedQty: 4908, receivedDate: "2026-02-26", remark: "pending batch complete" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "HDMI Cable Dabbi", orderQty: 5000, orderDate: "", expectedDate: "2026-04-15", receivedQty: 5837, receivedDate: "2026-04-14", remark: "order complete" },
+  { vendor: "GTB, Bawana", contact: "9999132430", product: "HDMI Cable Dabbi", orderQty: 6000, orderDate: "", expectedDate: "2026-05-23", receivedQty: 6170, receivedDate: "2026-06-16", remark: "" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "45W Nothing Charger", orderQty: 3000, orderDate: "", expectedDate: "2026-04-20", receivedQty: 2471, receivedDate: "2026-04-23", remark: "Tray=529, Dabbi=150, Gumming Sheet=1000" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "30W Google Charger", orderQty: 3000, orderDate: "", expectedDate: "2026-04-20", receivedQty: 5521, receivedDate: "2026-04-23", remark: "Tray=2129, Dabbi=250, Stickers=43200" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "65W Nothing Charger", orderQty: 3000, orderDate: "", expectedDate: "2026-04-20", receivedQty: 2650, receivedDate: "2026-04-23", remark: "Tray=350, Dabbi=250" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Motorola Charger with C to C", orderQty: 3000, orderDate: "", expectedDate: "2026-04-20", receivedQty: "", receivedDate: "2026-04-23", remark: "blister via Sanya, dabbi via Khan Sahab, already received" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Supervooc Cable", orderQty: 3000, orderDate: "", expectedDate: "2026-04-20", receivedQty: 2850, receivedDate: "2026-04-23", remark: "" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "2.5x2.5x17inch Umbrella White Box", orderQty: 2000, orderDate: "", expectedDate: "2026-04-20", receivedQty: "", receivedDate: "2026-04-23", remark: "2874 box packing material" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "20W C to L", orderQty: 5604, orderDate: "", expectedDate: "2026-05-02", receivedQty: "", receivedDate: "2026-05-11", remark: "Tray=1200, Dabbi=6000" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "20W C to C", orderQty: 5805, orderDate: "", expectedDate: "2026-05-02", receivedQty: "", receivedDate: "2026-05-11", remark: "Dabbi=5800, Gumming Sheet=1000" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "25W with C to C Cable", orderQty: 821, orderDate: "", expectedDate: "2026-05-02", receivedQty: "", receivedDate: "2026-05-11", remark: "Dabbi=2922" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "25W Samsung Charger", orderQty: 2084, orderDate: "", expectedDate: "2026-05-02", receivedQty: "", receivedDate: "2026-05-11", remark: "Tray=5828" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "80W Supervooc Charger", orderQty: 911, orderDate: "", expectedDate: "2026-05-02", receivedQty: "", receivedDate: "2026-05-11", remark: "Tray=1691" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Gumming Sheet", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "2026-06-02", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "3 Fold Umbrella", orderQty: 600, orderDate: "", expectedDate: "2026-06-02", receivedQty: 2007, receivedDate: "2026-06-05", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Brown crtn small", orderQty: 200, orderDate: "", expectedDate: "2026-06-02", receivedQty: 200, receivedDate: "2026-06-05", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Umbrella packaging (2.5x2.5x18.5in)", orderQty: 1500, orderDate: "", expectedDate: "2026-06-09", receivedQty: 1575, receivedDate: "2026-06-17", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Umbrella packaging (2.5x2.5x16.5in)", orderQty: 1500, orderDate: "", expectedDate: "2026-06-09", receivedQty: 1586, receivedDate: "2026-06-17", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Big Gol Stickers", orderQty: 14000, orderDate: "", expectedDate: "2026-06-09", receivedQty: 14000, receivedDate: "2026-06-18", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Small Gol Stickers", orderQty: 43200, orderDate: "", expectedDate: "2026-06-09", receivedQty: 43200, receivedDate: "2026-06-18", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Gumming Sheet", orderQty: 2000, orderDate: "", expectedDate: "2026-06-20", receivedQty: 1000, receivedDate: "2026-06-22", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Gumming Sheet", orderQty: 1000, orderDate: "", expectedDate: "2026-06-29", receivedQty: 1000, receivedDate: "2026-06-29", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Gumming Sheet", orderQty: 1000, orderDate: "", expectedDate: "2026-07-01", receivedQty: 2000, receivedDate: "2026-07-02", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Brand Tape - UNIGEN", orderQty: "", orderDate: "", expectedDate: "2026-07-02", receivedQty: "", receivedDate: "", remark: "1 box (12 dande), Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Umbrella packaging (2.5x2.5x18.5in)", orderQty: 1500, orderDate: "", expectedDate: "", receivedQty: 1542, receivedDate: "", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Umbrella packaging (2.5x2.5x16.5in)", orderQty: 1500, orderDate: "", expectedDate: "", receivedQty: 1514, receivedDate: "", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Umbrella packaging (2.5x2.5x11.5in)", orderQty: 1500, orderDate: "", expectedDate: "", receivedQty: 1500, receivedDate: "", remark: "Packaging" },
+  { vendor: "Khan Sahab", contact: "9811624215", product: "Brand Tape - UNIGEN", orderQty: "9 box", orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Packaging" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "20W PD AD Dabbi+Tray", orderQty: 5000, orderDate: "", expectedDate: "", receivedQty: 5050, receivedDate: "2026-04-20", remark: "dispatch: monday" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "C-L 1.5M Cable Dabbi", orderQty: 5000, orderDate: "", expectedDate: "", receivedQty: 5000, receivedDate: "2026-04-20", remark: "dispatch: monday" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "C-C 1.5M Cable Dabbi", orderQty: 5000, orderDate: "", expectedDate: "", receivedQty: 5000, receivedDate: "2026-04-20", remark: "dispatch: monday" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "Warranty Card", orderQty: 50000, orderDate: "2026-04-20", expectedDate: "", receivedQty: "50000+ pcs", receivedDate: "2026-04-28", remark: "New order placed 20-04-2026" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "20W PD AD Dabbi+Tray", orderQty: 5000, orderDate: "2026-05-11", expectedDate: "2026-05-22", receivedQty: 5020, receivedDate: "2026-05-22", remark: "" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "20W C-L Dabbi+Tray", orderQty: 5000, orderDate: "2026-05-11", expectedDate: "2026-05-22", receivedQty: 5000, receivedDate: "2026-05-22", remark: "" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "25W with C-C Dabbi+Tray", orderQty: 5000, orderDate: "2026-05-11", expectedDate: "2026-05-22", receivedQty: 5020, receivedDate: "2026-05-22", remark: "" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "45W Google AD", orderQty: "", orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Qty Dabbi 5000, Qty Tray 5000 - new order, no dispatch yet" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "45W Nothing AD", orderQty: 5000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order, no dispatch yet" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "65W Nothing AD", orderQty: 5000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order, no dispatch yet" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "Car Charger", orderQty: 10000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "material in 2 days, take update Saturday" },
+  { vendor: "Mohit Sir Dabbi", contact: "9811690606", product: "68W Motorola AD", orderQty: 5000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order, no dispatch yet" },
+  { vendor: "Ankit Packaging Solution", contact: "01149425106", product: "20W PD AD", orderQty: 10000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Dabbi order, delivery Saturday" },
+  { vendor: "Ankit Packaging Solution", contact: "01149425106", product: "80W SUPERVOOC AD", orderQty: 10000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Dabbi order, delivery Saturday" },
+  { vendor: "Ankit Packaging Solution", contact: "01149425106", product: "30W GOOGLE AD", orderQty: 3000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Dabbi order, delivery Saturday" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "Black 21inch Umbrella with button", orderQty: 400, orderDate: "", expectedDate: "2026-04-30", receivedQty: 396, receivedDate: "2026-05-01", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "Black 24inch Umbrella with button", orderQty: 400, orderDate: "", expectedDate: "2026-04-30", receivedQty: 396, receivedDate: "2026-05-01", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "Black 3 Fold 21.5inch Umbrella manual", orderQty: 400, orderDate: "", expectedDate: "2026-04-30", receivedQty: 396, receivedDate: "2026-05-01", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "2 Fold 24-Inch Black Umbrella", orderQty: 600, orderDate: "", expectedDate: "2026-05-27", receivedQty: 600, receivedDate: "2026-05-27", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "3 Fold Umbrella", orderQty: 600, orderDate: "", expectedDate: "2026-06-01", receivedQty: 600, receivedDate: "2026-06-02", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "Umbrella Black 21inch with button", orderQty: 200, orderDate: "", expectedDate: "2026-06-06", receivedQty: 204, receivedDate: "2026-06-08", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "Umbrella Black 24inch with button", orderQty: 400, orderDate: "", expectedDate: "2026-06-06", receivedQty: 408, receivedDate: "2026-06-08", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "3 Fold Umbrella Black", orderQty: 1000, orderDate: "", expectedDate: "2026-06-09", receivedQty: 156, receivedDate: "2026-06-11", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "2 Fold 24-Inch Black Umbrella", orderQty: 1000, orderDate: "", expectedDate: "2026-06-09", receivedQty: 1008, receivedDate: "2026-06-11", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "2 Fold 21-Inch Black Umbrella", orderQty: 600, orderDate: "", expectedDate: "2026-06-09", receivedQty: 600, receivedDate: "2026-06-11", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "3 Fold Umbrella Black", orderQty: 1584, orderDate: "", expectedDate: "2026-06-17", receivedQty: 1584, receivedDate: "2026-06-18", remark: "" },
+  { vendor: "Classic Umbrella", contact: "9999354096", product: "2 Fold 21-Inch Black Umbrella", orderQty: 432, orderDate: "", expectedDate: "2026-06-27", receivedQty: 432, receivedDate: "2026-06-27", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40X40 (pack of 2)=28pcs", orderQty: 28, orderDate: "", expectedDate: "", receivedQty: 70, receivedDate: "2026-04-21", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40X40 (Pack of 3)=42pcs", orderQty: 42, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "not received yet" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40X60 (Pack of 2)=28pcs (not live)", orderQty: 28, orderDate: "", expectedDate: "", receivedQty: 28, receivedDate: "2026-04-21", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40x60 (600 GSM)", orderQty: 30, orderDate: "", expectedDate: "", receivedQty: 30, receivedDate: "2026-05-22", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40x40 (600 GSM)", orderQty: 70, orderDate: "", expectedDate: "", receivedQty: 70, receivedDate: "2026-05-30", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40x40 (600 GSM)", orderQty: 46, orderDate: "", expectedDate: "", receivedQty: 46, receivedDate: "2026-06-01", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40X60 (600 GSM)", orderQty: 46, orderDate: "", expectedDate: "", receivedQty: 46, receivedDate: "2026-06-02", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40x40 (600 GSM)", orderQty: 128, orderDate: "", expectedDate: "", receivedQty: 128, receivedDate: "2026-06-22", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40X60 (600 GSM)", orderQty: 60, orderDate: "", expectedDate: "", receivedQty: 60, receivedDate: "2026-06-22", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40x40 (600 GSM)", orderQty: 212, orderDate: "", expectedDate: "", receivedQty: 212, receivedDate: "2026-06-27", remark: "" },
+  { vendor: "Ayush Sir Micro Fibre", contact: "9711512593", product: "40x40 (600 GSM)", orderQty: 144, orderDate: "", expectedDate: "", receivedQty: 144, receivedDate: "2026-07-02", remark: "" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Small Box", orderQty: 100, orderDate: "2026-04-23", expectedDate: "", receivedQty: 100, receivedDate: "2026-04-23", remark: "DONE" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Medium Box", orderQty: 250, orderDate: "2026-04-23", expectedDate: "", receivedQty: 250, receivedDate: "2026-04-23", remark: "DONE" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Small Box", orderQty: 300, orderDate: "2026-05-14", expectedDate: "", receivedQty: 300, receivedDate: "2026-05-14", remark: "Amount Rs 7800" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Medium Box", orderQty: 150, orderDate: "2026-05-14", expectedDate: "", receivedQty: 150, receivedDate: "2026-05-14", remark: "Amount Rs 5700" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Medium Box", orderQty: 400, orderDate: "2026-05-19", expectedDate: "", receivedQty: 400, receivedDate: "2026-05-19", remark: "Rs 55/pcs, Amount Rs 23100" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Small box", orderQty: 300, orderDate: "2026-06-05", expectedDate: "", receivedQty: 300, receivedDate: "2026-06-06", remark: "Rs 26/pcs, Amount Rs 8190" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Small box", orderQty: 200, orderDate: "2026-06-12", expectedDate: "", receivedQty: 200, receivedDate: "2026-06-12", remark: "Rs 26/pcs, Amount Rs 17010" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Medium Box", orderQty: 200, orderDate: "2026-06-12", expectedDate: "", receivedQty: 200, receivedDate: "2026-06-12", remark: "Rs 55/pcs" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "New box", orderQty: 100, orderDate: "", expectedDate: "", receivedQty: 100, receivedDate: "2026-06-24", remark: "Rs 45/pcs, Amount Rs 5145, PAID" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Medium box", orderQty: 300, orderDate: "", expectedDate: "", receivedQty: 300, receivedDate: "2026-06-29", remark: "Rs 38/pcs, Amount Rs 20870" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "Small box", orderQty: 326, orderDate: "", expectedDate: "", receivedQty: 326, receivedDate: "2026-06-29", remark: "Rs 26/pcs, PAID" },
+  { vendor: "Inderlok Box", contact: "9213479129", product: "New box", orderQty: 350, orderDate: "", expectedDate: "", receivedQty: 350, receivedDate: "2026-07-02", remark: "Rs 60/pcs, Amount Rs 22470, NOT PAID" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter Old OG", orderQty: 1600, orderDate: "", expectedDate: "2026-02-18", receivedQty: 1600, receivedDate: "2026-02-18", remark: "next order 1500" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter with USB/PD Port", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "next order 500; e-way bill next day" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter White", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "next order 500" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter White", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "next order 500 (dup SKU line in sheet)" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter Old OG", orderQty: 1600, orderDate: "2026-02-21", expectedDate: "", receivedQty: 1600, receivedDate: "2026-03-03", remark: "new order placed 21.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter with USB/PD Port", orderQty: 600, orderDate: "2026-02-21", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 21.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter White", orderQty: 600, orderDate: "2026-02-21", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 21.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Travel Adapter White", orderQty: 600, orderDate: "2026-02-21", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 21.02.2026 (dup SKU line)" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Universal Travel Adapter Black", orderQty: 0, orderDate: "2026-02-27", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 27.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Universal Travel Adapter Black/White", orderQty: 0, orderDate: "2026-02-27", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 27.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Universal Travel Adapter USB", orderQty: 500, orderDate: "2026-02-27", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 27.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Universal Travel Adapter Old", orderQty: 500, orderDate: "2026-02-27", expectedDate: "", receivedQty: "", receivedDate: "", remark: "new order placed 27.02.2026" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "OTUM TRAVEL AD GRAY/WHITE", orderQty: 600, orderDate: "", expectedDate: "", receivedQty: 600, receivedDate: "", remark: "see wide receiving log in original sheet - review manually" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "UK3PINPLUG", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: 500, receivedDate: "", remark: "see wide receiving log in original sheet - review manually" },
+  { vendor: "Mihir Trading Mumbai", contact: "", product: "Mihir-Qurus P/s 2 yard Extension Board", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "see wide receiving log in original sheet - review manually" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "Motorola adapter black blister 550gsm", orderQty: 2000, orderDate: "2026-04-18", expectedDate: "", receivedQty: 2190, receivedDate: "2026-04-20", remark: "" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "CAR CHARGER BLISTER", orderQty: 10000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "45W NOTHING AD", orderQty: 4000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "65W NOTHING AD", orderQty: 4000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "20W PD AD", orderQty: 10000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order; they gave blisters on Saturday" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "80W SUPERVOOC AD", orderQty: 10000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "30W GOOGLE AD", orderQty: 4000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order" },
+  { vendor: "Sanya Blister Mayapuri", contact: "8287453190", product: "68W MOTOROLA", orderQty: 5000, orderDate: "2026-06-23", expectedDate: "", receivedQty: "", receivedDate: "", remark: "July order" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "100W SUPERVOOC WITH PACKING", orderQty: 1500, orderDate: "", expectedDate: "", receivedQty: 1475, receivedDate: "2026-02-14", remark: "this order done; should be ready by 28.02.2026" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "65W Nothing Charger", orderQty: 500, orderDate: "", expectedDate: "2026-02-11", receivedQty: 345, receivedDate: "2026-02-20", remark: "2nd order 9-15 Feb" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "45W Nothing Charger", orderQty: 500, orderDate: "", expectedDate: "2026-02-11", receivedQty: 500, receivedDate: "2026-02-20", remark: "" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "30W Google Charger", orderQty: 500, orderDate: "", expectedDate: "2026-02-11", receivedQty: "", receivedDate: "", remark: "2nd order 9-15 Feb" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "45W Google Charger", orderQty: 500, orderDate: "", expectedDate: "2026-02-11", receivedQty: "", receivedDate: "", remark: "2nd order 9-15 Feb" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "100W SUPERVOOC WITH PACKING", orderQty: 2000, orderDate: "", expectedDate: "2026-02-11", receivedQty: "", receivedDate: "", remark: "Packaging Dabbi/Tray/Sticker batch" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "65W Nothing Charger", orderQty: 155, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "qty pending, dispatch this week" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "30W Google Charger", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "qty pending, dispatch this week" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "45W Google Charger", orderQty: 500, orderDate: "2026-04-27", expectedDate: "2026-04-29", receivedQty: 500, receivedDate: "2026-04-29", remark: "" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "30W GOOGLE AD", orderQty: 200, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "June dispatch schedule 25/06" },
+  { vendor: "Myra Digital - Okhla", contact: "", product: "45W GOOGLE AD", orderQty: 100, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "June dispatch schedule 01/06" },
+  { vendor: "Car Duster Bawana", contact: "8585953880", product: "Car duster", orderQty: 40, orderDate: "", expectedDate: "", receivedQty: 50, receivedDate: "2026-05-05", remark: "" },
+  { vendor: "Car Duster Bawana", contact: "8585953880", product: "Car duster", orderQty: "", orderDate: "", expectedDate: "", receivedQty: 28, receivedDate: "2026-05-08", remark: "" },
+  { vendor: "Car Duster Bawana", contact: "8585953880", product: "Unigen Car Duster with Handle (Paraffin Wax, Black)", orderQty: 50, orderDate: "", expectedDate: "", receivedQty: 50, receivedDate: "2026-07-01", remark: "" },
+  { vendor: "Padam Noida", contact: "9654702622", product: "45W Google Charger", orderQty: 1000, orderDate: "2026-06-13", expectedDate: "", receivedQty: 1000, receivedDate: "2026-06-25", remark: "" },
+  { vendor: "Padam Noida", contact: "9654702622", product: "30W Google Charger", orderQty: 1500, orderDate: "2026-06-13", expectedDate: "", receivedQty: 1500, receivedDate: "2026-06-25", remark: "" },
+  { vendor: "Padam Noida", contact: "9654702622", product: "100W Supervooc Charger", orderQty: 1500, orderDate: "2026-06-13", expectedDate: "", receivedQty: 1500, receivedDate: "2026-06-27", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "20W PD CHARGER (App)", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Order received on 10/02/2026" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "20W PD CHARGER (App)+ C to L CABLE", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "20W PD CHARGER (App)+ C to C CABLE", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "25W PD/PPS SAMSUNG X004", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "25W PD PPS + SUPERVOOC CHARGER", orderQty: 380, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "USBA 80W SUPERVOOC 716 + CABLE WOC", orderQty: 500, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Corrogated Carton", orderQty: 92, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "80W Supervooc Charger", orderQty: 1500, orderDate: "", expectedDate: "2026-02-13", receivedQty: "", receivedDate: "2026-02-13", remark: "packing material send same day" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "C-C Cable with 4 sides logo print", orderQty: 1000, orderDate: "", expectedDate: "2026-02-19", receivedQty: "", receivedDate: "2026-02-19", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen Type-C iphone Charger Adapter (C to C, 20W)", orderQty: 1500, orderDate: "2026-02-16", expectedDate: "2026-02-19", receivedQty: 1500, receivedDate: "2026-02-23", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen Type-C Apple Charger Adapter (C to Lightning, 20W)", orderQty: 2000, orderDate: "2026-02-16", expectedDate: "", receivedQty: 2000, receivedDate: "2026-02-23", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen Samsung Type C Charger (25W)", orderQty: 1000, orderDate: "2026-02-16", expectedDate: "", receivedQty: 1000, receivedDate: "2026-02-23", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen Samsung Type C Charger Adapter (25W)", orderQty: 1000, orderDate: "2026-02-16", expectedDate: "", receivedQty: 1000, receivedDate: "2026-02-23", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen Type-C Iphone Charger Adapter (20W)", orderQty: 1000, orderDate: "2026-02-16", expectedDate: "", receivedQty: 1000, receivedDate: "2026-02-23", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen Dual Port Type-C Charging Adapter (25W)", orderQty: 1000, orderDate: "2026-02-16", expectedDate: "", receivedQty: 1000, receivedDate: "2026-02-23", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Unigen SuperVooc Charger (Type C Cable, 80W)", orderQty: 2000, orderDate: "2026-02-16", expectedDate: "", receivedQty: 100, receivedDate: "2026-02-23", remark: "partial, review manually" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "20W PD CHARGER (App)", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: 0, receivedDate: "", remark: "packing material qty 1000, none received yet" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "20W PD CHARGER (App)+ C to C CABLE", orderQty: 2000, orderDate: "", expectedDate: "", receivedQty: 300, receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "20W PD CHARGER (App)+ C to L CABLE", orderQty: 3000, orderDate: "", expectedDate: "", receivedQty: 800, receivedDate: "", remark: "500+300 received, 2500 pending" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "25W PD/PPS SAMSUNG X004", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: 500, receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "25W PD/PPS SAMSUNG X004 + C TO C CABLE", orderQty: 2000, orderDate: "", expectedDate: "", receivedQty: 0, receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "25W PD/PPS +SUPERVOOC CHARGER", orderQty: 1000, orderDate: "", expectedDate: "", receivedQty: 500, receivedDate: "", remark: "not available note; +2200 later" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "USBA 80W SUPERVOOC 716 + CABLE WOC", orderQty: 2000, orderDate: "", expectedDate: "", receivedQty: 2000, receivedDate: "", remark: "" },
+  { vendor: "Indo-Chin Wazirpur", contact: "", product: "Sticker", orderQty: 16200, orderDate: "", expectedDate: "", receivedQty: "", receivedDate: "", remark: "Packaging" },
+];
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function fmtDate(d) {
+  if (!d) return "-";
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Order kai baar ek saath poora nahi aata — parts me (multiple receipts) aata hai.
+// Agar entry.receipts (receiving log) mojood hai to uska total hi asli received qty hai,
+// warna purana single receivedQty field use hota hai (backward compatible).
+function getReceivedQty(e) {
+  if (Array.isArray(e.receipts) && e.receipts.length) {
+    return e.receipts.reduce((sum, r) => sum + (Number(r.qty) || 0), 0);
+  }
+  return Number(e.receivedQty) || 0;
+}
+
+function getLastReceivedDate(e) {
+  if (Array.isArray(e.receipts) && e.receipts.length) {
+    return e.receipts.reduce((latest, r) => (!latest || (r.date && r.date > latest)) ? r.date : latest, "");
+  }
+  return e.receivedDate || "";
+}
+
+function getStatus(e) {
+  const order = Number(e.orderQty) || 0;
+  const recv = getReceivedQty(e);
+  if (recv <= 0) return "pending";
+  if (recv < order) return "partial";
+  return "completed";
+}
+
+function isOverdue(e) {
+  const status = getStatus(e);
+  if (status === "completed") return false;
+  if (!e.expectedDate) return false;
+  return new Date(e.expectedDate) < new Date(todayStr());
+}
+
+const STATUS_META = {
+  pending: { label: "Pending", color: COLORS.amber, bg: COLORS.amberBg, border: COLORS.amberBorder, icon: Clock },
+  partial: { label: "Partial", color: COLORS.blue, bg: COLORS.blueBg, border: COLORS.blueBorder, icon: Truck },
+  completed: { label: "Completed", color: COLORS.green, bg: COLORS.greenBg, border: COLORS.greenBorder, icon: CheckCircle2 },
+  overdue: { label: "Overdue", color: COLORS.red, bg: COLORS.redBg, border: COLORS.redBorder, icon: AlertTriangle },
+};
+
+function makeStats(list) {
+  let pendingQty = 0, receivedQty = 0, orderQty = 0, overdueCount = 0, completedCount = 0, openCount = 0;
+  list.forEach(e => {
+    const order = Number(e.orderQty) || 0;
+    const recv = getReceivedQty(e);
+    orderQty += order;
+    receivedQty += recv;
+    pendingQty += Math.max(order - recv, 0);
+    const st = getStatus(e);
+    if (st === "completed") completedCount++; else openCount++;
+    if (isOverdue(e)) overdueCount++;
+  });
+  return { pendingQty, receivedQty, orderQty, overdueCount, completedCount, openCount, total: list.length };
+}
+
+function makeVendorChart(list) {
+  const map = {};
+  list.forEach(e => {
+    const order = Number(e.orderQty) || 0;
+    const recv = getReceivedQty(e);
+    const pend = Math.max(order - recv, 0);
+    if (pend <= 0) return;
+    map[e.vendor] = (map[e.vendor] || 0) + pend;
+  });
+  return Object.entries(map).map(([name, pending]) => ({ name, pending }))
+    .sort((a, b) => b.pending - a.pending).slice(0, 8);
+}
+
+function makeStatusPie(list) {
+  let pending = 0, partial = 0, completed = 0;
+  list.forEach(e => {
+    const st = getStatus(e);
+    if (st === "pending") pending++;
+    else if (st === "partial") partial++;
+    else completed++;
+  });
+  return [
+    { name: "Pending", value: pending, color: COLORS.amber },
+    { name: "Partial", value: partial, color: COLORS.blue },
+    { name: "Completed", value: completed, color: COLORS.green },
+  ].filter(d => d.value > 0);
+}
+
+async function sheetFetch(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+async function apiGetEntries(url) {
+  const data = await sheetFetch(url, { method: "GET" });
+  const list = Array.isArray(data) ? data : data.entries;
+  if (!Array.isArray(list)) throw new Error("Bad response");
+  return list.map(e => ({ ...e, id: e.id || uid() }));
+}
+
+// Naya generic GET jo entries ke saath vendors/products/packing items bhi sheet se le aata hai
+// (agar backend Code.gs unhe bhejta ho). Purane backend ke saath bhi chalega (sirf entries milegi).
+async function apiGetAll(url) {
+  const data = await sheetFetch(url, { method: "GET" });
+  if (Array.isArray(data)) {
+    return { entries: data.map(e => ({ ...e, id: e.id || uid() })), vendors: null, products: null, packingItems: null, users: null };
+  }
+  return {
+    entries: (data.entries || []).map(e => ({ ...e, id: e.id || uid() })),
+    vendors: data.vendors || null,
+    products: data.products || null,
+    packingItems: data.packingItems || null,
+    users: data.users || null,
+  };
+}
+
+async function apiSyncMaster(url, { vendors, products, packingItems }) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "syncMaster", vendors, products, packingItems }),
+  });
+}
+
+async function apiUpsert(url, entry) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "upsert", entry }),
+  });
+}
+
+async function apiDelete(url, id) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "delete", id }),
+  });
+}
+
+async function apiBulkSync(url, entries) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "bulkSync", entries }),
+  });
+}
+
+// Bulk update: ek saath multiple entries ko upsert karna (jaise bulk selection se remark/receipt update)
+async function apiBulkUpsert(url, entries) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "bulkSync", entries }),
+  });
+}
+
+// User Details sheet ke saath sync — login credentials yaha se save/update hote hai
+async function apiSyncUsers(url, users) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "syncUsers", users }),
+  });
+}
+
+async function apiUpdateUser(url, user) {
+  return sheetFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "updateUser", user }),
+  });
+}
+
+async function storageGet(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw !== null) return JSON.parse(raw);
+    return fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+async function storageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function Badge({ status }) {
+  const meta = STATUS_META[status];
+  const Icon = meta.icon;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`,
+      borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 700,
+      letterSpacing: 0.3, whiteSpace: "nowrap",
+    }}>
+      <Icon size={12} strokeWidth={2.5} />
+      {meta.label.toUpperCase()}
+    </span>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 0.6, textTransform: "uppercase" }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = {
+  background: COLORS.panelAlt,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: 8,
+  padding: "9px 11px",
+  color: COLORS.text,
+  fontSize: 14,
+  outline: "none",
+  width: "100%",
+  boxSizing: "border-box",
+  fontFamily: "inherit",
+};
+
+function EntryModal({ open, onClose, onSave, vendors, products, packingItems, initial }) {
+  const [form, setForm] = useState(initial);
+  const [customProduct, setCustomProduct] = useState(false);
+  const [customVendor, setCustomVendor] = useState(false);
+
+  const itemsList = form.kind === "packing" ? packingItems : products;
+
+  useEffect(() => {
+    setForm(initial);
+    const list = initial.kind === "packing" ? packingItems : products;
+    setCustomProduct(initial.product && !list.some(p => p.name === initial.product));
+    setCustomVendor(initial.vendor && !vendors.some(v => v.name === initial.vendor));
+  }, [initial, open]);
+
+  if (!open) return null;
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const setKind = (k) => setForm(f => ({ ...f, kind: k, product: "" }));
+
+  const canSave = form.vendor && form.product && form.orderQty;
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 50, padding: 16,
+    }} onClick={onClose}>
+      <div style={{
+        background: COLORS.panel, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, width: "100%", maxWidth: 560, maxHeight: "88vh",
+        overflowY: "auto", padding: 22,
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.text, letterSpacing: 0.3 }}>
+            {initial.id ? "Edit Entry" : "New Entry"}
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <button onClick={() => setKind("product")} style={{
+            flex: 1, padding: "8px 10px", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
+            background: form.kind !== "packing" ? COLORS.amberBg : COLORS.panelAlt,
+            color: form.kind !== "packing" ? COLORS.amber : COLORS.textMuted,
+            border: `1px solid ${form.kind !== "packing" ? COLORS.amberBorder : COLORS.border}`,
+          }}>Product Order</button>
+          <button onClick={() => setKind("packing")} style={{
+            flex: 1, padding: "8px 10px", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
+            background: form.kind === "packing" ? COLORS.amberBg : COLORS.panelAlt,
+            color: form.kind === "packing" ? COLORS.amber : COLORS.textMuted,
+            border: `1px solid ${form.kind === "packing" ? COLORS.amberBorder : COLORS.border}`,
+          }}>Packing Order</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <Field label="Vendor Name">
+            {!customVendor ? (
+              <select style={inputStyle} value={form.vendor || ""} onChange={e => {
+                if (e.target.value === "__custom__") { setCustomVendor(true); set("vendor", ""); }
+                else set("vendor", e.target.value);
+              }}>
+                <option value="">Select vendor</option>
+                {vendors.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
+                <option value="__custom__">+ Add new vendor...</option>
+              </select>
+            ) : (
+              <div style={{ display: "flex", gap: 6 }}>
+                <input style={inputStyle} placeholder="Vendor name" value={form.vendor || ""} onChange={e => set("vendor", e.target.value)} />
+                <button onClick={() => setCustomVendor(false)} style={{ ...smallBtnStyle }}>List</button>
+              </div>
+            )}
+          </Field>
+
+          <Field label="Contact Number">
+            <input style={inputStyle} placeholder="Optional" value={form.contact || ""} onChange={e => set("contact", e.target.value)} />
+          </Field>
+
+          <Field label={form.kind === "packing" ? "Packing Material" : "Product / SKU"}>
+            {!customProduct ? (
+              <select style={inputStyle} value={form.product || ""} onChange={e => {
+                if (e.target.value === "__custom__") { setCustomProduct(true); set("product", ""); }
+                else set("product", e.target.value);
+              }}>
+                <option value="">{form.kind === "packing" ? "Select packing material" : "Select product"}</option>
+                {itemsList.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                <option value="__custom__">+ Add new {form.kind === "packing" ? "packing material" : "product"}...</option>
+              </select>
+            ) : (
+              <div style={{ display: "flex", gap: 6 }}>
+                <input style={inputStyle} placeholder={form.kind === "packing" ? "Packing material name" : "Product / SKU name"} value={form.product || ""} onChange={e => set("product", e.target.value)} />
+                <button onClick={() => setCustomProduct(false)} style={{ ...smallBtnStyle }}>List</button>
+              </div>
+            )}
+            {(() => {
+              const match = itemsList.find(p => p.name === form.product);
+              return match && match.note ? (
+                <div style={{ fontSize: 11.5, color: COLORS.textMuted, marginTop: 5 }}>📝 {match.note}</div>
+              ) : null;
+            })()}
+          </Field>
+
+          <Field label="Order Qty">
+            <input type="number" style={inputStyle} placeholder="0" value={form.orderQty ?? ""} onChange={e => set("orderQty", e.target.value)} />
+          </Field>
+
+          <Field label="Order Date">
+            <input type="date" style={inputStyle} value={form.orderDate || ""} onChange={e => set("orderDate", e.target.value)} />
+          </Field>
+
+          <Field label="Expected / Dispatch Date">
+            <input type="date" style={inputStyle} value={form.expectedDate || ""} onChange={e => set("expectedDate", e.target.value)} />
+          </Field>
+
+          <Field label="Received Qty">
+            <input type="number" style={inputStyle} placeholder="0" value={form.receivedQty ?? ""} onChange={e => set("receivedQty", e.target.value)} />
+          </Field>
+
+          <Field label="Received Date">
+            <input type="date" style={inputStyle} value={form.receivedDate || ""} onChange={e => set("receivedDate", e.target.value)} />
+          </Field>
+
+          <div style={{ gridColumn: "1 / -1" }}>
+            <Field label="Remark">
+              <input style={inputStyle} placeholder="Koi note ya remark..." value={form.remark || ""} onChange={e => set("remark", e.target.value)} />
+            </Field>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
+          <button onClick={onClose} style={{ ...smallBtnStyle, padding: "9px 16px" }}>Cancel</button>
+          <button
+            disabled={!canSave}
+            onClick={() => onSave(form)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: canSave ? COLORS.amber : COLORS.borderSoft,
+              color: canSave ? "#FFFFFF" : COLORS.textMuted,
+              border: "none", borderRadius: 8, padding: "9px 18px",
+              fontWeight: 800, fontSize: 13, cursor: canSave ? "pointer" : "not-allowed",
+            }}>
+            <Save size={14} /> Save Entry
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const smallBtnStyle = {
+  background: COLORS.panelAlt, border: `1px solid ${COLORS.border}`,
+  color: COLORS.textDim, borderRadius: 8, padding: "8px 12px",
+  fontSize: 13, fontWeight: 600, cursor: "pointer",
+};
+
+function BulkActionBar({ count, bulkQty, setBulkQty, bulkDate, setBulkDate, bulkRemark, setBulkRemark, onAddReceipt, onSetRemark, onMarkCompleted, onDelete, onClear }) {
+  if (count === 0) return null;
+  return (
+    <div style={{
+      background: COLORS.amberBg, border: `1px solid ${COLORS.amberBorder}`, borderRadius: 12,
+      padding: "12px 14px", marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end",
+    }}>
+      <div style={{ fontSize: 12.5, fontWeight: 800, color: COLORS.amber, marginRight: 4, whiteSpace: "nowrap" }}>
+        {count} selected —
+      </div>
+      <div>
+        <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Date</div>
+        <input type="date" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px", width: 130 }} value={bulkDate} onChange={e => setBulkDate(e.target.value)} />
+      </div>
+      <div>
+        <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Qty to add each</div>
+        <input type="number" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px", width: 100 }} placeholder="0" value={bulkQty} onChange={e => setBulkQty(e.target.value)} />
+      </div>
+      <div style={{ flex: "1 1 160px" }}>
+        <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Remark (optional)</div>
+        <input style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px" }} placeholder="Sab par lagane wala note" value={bulkRemark} onChange={e => setBulkRemark(e.target.value)} />
+      </div>
+      <button onClick={onAddReceipt} disabled={!bulkQty} style={{ ...smallBtnStyle, background: bulkQty ? COLORS.amber : COLORS.borderSoft, color: bulkQty ? "#FFFFFF" : COLORS.textMuted, fontWeight: 800 }}>
+        + Add receipt to all
+      </button>
+      <button onClick={onSetRemark} disabled={!bulkRemark} style={smallBtnStyle}>Set remark on all</button>
+      <button onClick={onMarkCompleted} style={smallBtnStyle}>Mark all completed</button>
+      <button onClick={onDelete} style={{ ...smallBtnStyle, color: COLORS.red }}>Delete selected</button>
+      <button onClick={onClear} style={smallBtnStyle}>Clear selection</button>
+    </div>
+  );
+}
+
+function KPICard({ label, value, sub, color, icon: Icon }) {
+  return (
+    <div style={{
+      background: color, borderRadius: 12, padding: "16px 18px",
+      position: "relative", overflow: "hidden",
+      boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+    }}>
+      <div style={{ position: "absolute", top: -16, right: -16, width: 70, height: 70, borderRadius: "50%", background: "rgba(255,255,255,0.13)" }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <div style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(255,255,255,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF" }}>
+          <Icon size={14} />
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 0.6, textTransform: "uppercase" }}>{label}</div>
+      </div>
+      <div style={{ fontSize: 27, fontWeight: 800, color: "#FFFFFF", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 3 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function VendorBarList({ data }) {
+  const max = Math.max(...data.map(d => d.pending), 1);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 130, fontSize: 12, color: COLORS.textDim, whiteSpace: "nowrap",
+            overflow: "hidden", textOverflow: "ellipsis", flexShrink: 0,
+          }} title={d.name}>{d.name}</div>
+          <div style={{ flex: 1, background: COLORS.panelSoft, borderRadius: 6, height: 18, position: "relative" }}>
+            <div style={{
+              width: `${Math.max((d.pending / max) * 100, 3)}%`, height: "100%",
+              background: COLORS.amber, borderRadius: 6, transition: "width 0.3s ease",
+            }} />
+          </div>
+          <div style={{ width: 46, textAlign: "right", fontSize: 12, fontFamily: "ui-monospace, monospace", color: COLORS.textDim, flexShrink: 0 }}>
+            {d.pending.toLocaleString("en-IN")}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusDonut({ data }) {
+  const total = data.reduce((s, d) => s + d.value, 0) || 1;
+  const R = 15.9155; // radius so full circumference = 100 (circle trick)
+  let acc = 0;
+  const segments = data.map(d => {
+    const pct = (d.value / total) * 100;
+    const seg = { ...d, pct, offset: acc };
+    acc += pct;
+    return seg;
+  });
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 180 }}>
+      <svg viewBox="0 0 42 42" width="150" height="150">
+        <circle cx="21" cy="21" r={R} fill="transparent" stroke={COLORS.panelSoft} strokeWidth="6" />
+        {segments.map((seg, i) => (
+          <circle
+            key={i} cx="21" cy="21" r={R} fill="transparent"
+            stroke={seg.color} strokeWidth="6"
+            strokeDasharray={`${seg.pct} ${100 - seg.pct}`}
+            strokeDashoffset={-seg.offset}
+            transform="rotate(-90 21 21)"
+            strokeLinecap="round"
+          />
+        ))}
+        <text x="21" y="19" textAnchor="middle" fontSize="6" fontWeight="800" fill={COLORS.text}>{total}</text>
+        <text x="21" y="26" textAnchor="middle" fontSize="3.4" fill={COLORS.textMuted}>entries</text>
+      </svg>
+    </div>
+  );
+}
+
+function VendorTagPicker({ label, allVendors, selected, onToggle }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 0.4, marginBottom: 4, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+        {selected.length === 0 && !open && (
+          <span style={{ fontSize: 12, color: COLORS.textMuted }}>koi vendor set nahi</span>
+        )}
+        {selected.map(name => (
+          <span key={name} style={{
+            display: "inline-flex", alignItems: "center", gap: 5, background: COLORS.amberBg,
+            color: COLORS.amber, border: `1px solid ${COLORS.amberBorder}`, borderRadius: 20,
+            padding: "3px 8px 3px 10px", fontSize: 12, fontWeight: 600,
+          }}>
+            {name}
+            <button onClick={() => onToggle(name)} style={{ background: "none", border: "none", color: COLORS.amber, cursor: "pointer", padding: 0, display: "flex" }}>
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        {open ? (
+          <select
+            autoFocus
+            style={{ ...inputStyle, width: 190, padding: "5px 8px", fontSize: 12.5 }}
+            value=""
+            onChange={e => { if (e.target.value) onToggle(e.target.value); setOpen(false); }}
+            onBlur={() => setOpen(false)}
+          >
+            <option value="">Select vendor...</option>
+            {allVendors.filter(v => !selected.includes(v)).map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+        ) : (
+          <button onClick={() => setOpen(true)} style={{ ...smallBtnStyle, padding: "4px 10px", fontSize: 12 }}>
+            <Plus size={11} style={{ marginRight: 3, verticalAlign: -1 }} />Add
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductRow({ product, isLast, usageCount, allVendorNames, onSaveNote, onToggleVendor, onDelete }) {
+  const [note, setNote] = useState(product.note || "");
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => { setNote(product.note || ""); setDirty(false); }, [product.name]);
+
+  const commit = () => {
+    if (dirty) onSaveNote(note);
+    setDirty(false);
+  };
+
+  return (
+    <div style={{
+      padding: "12px 16px", borderBottom: isLast ? "none" : `1px solid ${COLORS.borderSoft}`,
+      display: "flex", flexDirection: "column", gap: 10,
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>{product.name}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, whiteSpace: "nowrap" }}>{usageCount} entries</div>
+          <button onClick={onDelete} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }} title="Remove product">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <VendorTagPicker
+          label="Supplied by (Vendor)"
+          allVendors={allVendorNames}
+          selected={product.vendors || []}
+          onToggle={name => onToggleVendor("vendors", name)}
+        />
+        <VendorTagPicker
+          label="Packing by (Vendor)"
+          allVendors={allVendorNames}
+          selected={product.packingVendors || []}
+          onToggle={name => onToggleVendor("packingVendors", name)}
+        />
+      </div>
+      <input
+        style={{ ...inputStyle, fontSize: 12.5 }}
+        placeholder="Note likho (packaging detail, spec, reminder...)"
+        value={note}
+        onChange={e => { setNote(e.target.value); setDirty(true); }}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === "Enter") { e.target.blur(); } }}
+      />
+    </div>
+  );
+}
+
+function LoginScreen({ onLogin, error, checking }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+
+  const submit = () => {
+    if (!username.trim() || !password) return;
+    onLogin(username.trim(), password);
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: `linear-gradient(160deg, ${COLORS.brandFrom} 0%, ${COLORS.brandTo} 100%)`,
+      fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      padding: 20, boxSizing: "border-box",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 380, background: COLORS.panel, border: `1px solid ${COLORS.border}`,
+        borderRadius: 20, padding: "36px 30px", boxShadow: "0 20px 60px rgba(15,30,61,0.35)",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 22 }}>
+          <div style={{
+            width: 96, height: 96, borderRadius: 22, background: COLORS.amberBg,
+            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14,
+          }}>
+            <img src={LOGO_DATA_URI} alt="Unigen" style={{ width: 62, height: "auto" }} />
+          </div>
+          <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: 0.5, color: COLORS.text }}>UNIGEN LOGIN</div>
+          <div style={{ fontSize: 12.5, color: COLORS.textMuted, marginTop: 4, textAlign: "center" }}>
+            Vendor Order Tracker me login karo
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <Field label="Username">
+            <input
+              style={inputStyle}
+              placeholder="Username daalo"
+              value={username}
+              autoFocus
+              onChange={e => setUsername(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") submit(); }}
+            />
+          </Field>
+          <Field label="Password">
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPwd ? "text" : "password"}
+                style={{ ...inputStyle, paddingRight: 60 }}
+                placeholder="Password daalo"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") submit(); }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(s => !s)}
+                style={{
+                  position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", color: COLORS.textMuted, fontSize: 11.5,
+                  fontWeight: 700, cursor: "pointer",
+                }}
+              >{showPwd ? "HIDE" : "SHOW"}</button>
+            </div>
+          </Field>
+
+          {error && (
+            <div style={{ fontSize: 12.5, color: COLORS.red, background: COLORS.redBg, border: `1px solid ${COLORS.redBorder}`, borderRadius: 8, padding: "8px 10px" }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={submit}
+            disabled={checking || !username.trim() || !password}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              background: (checking || !username.trim() || !password) ? COLORS.borderSoft : COLORS.amber,
+              color: (checking || !username.trim() || !password) ? COLORS.textMuted : "#FFFFFF",
+              border: "none", borderRadius: 9, padding: "11px 16px", fontWeight: 800, fontSize: 14,
+              cursor: (checking || !username.trim() || !password) ? "not-allowed" : "pointer", marginTop: 4,
+            }}
+          >
+            {checking ? "Checking..." : "Enter"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [loaded, setLoaded] = useState(false);
+  const [entries, setEntries] = useState([]);
+  const [vendors, setVendors] = useState(SEED_VENDORS);
+  const [products, setProducts] = useState(SEED_PRODUCT_OBJS);
+  const [packingItems, setPackingItems] = useState(SEED_PACKING_ITEMS);
+  const [tab, setTab] = useState("dashboard");
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  const [vendorFilter, setVendorFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const [newVendorName, setNewVendorName] = useState("");
+  const [newVendorContact, setNewVendorContact] = useState("");
+  const [newProductName, setNewProductName] = useState("");
+  const [newPackingItemName, setNewPackingItemName] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [urlInput, setUrlInput] = useState("");
+  const [connStatus, setConnStatus] = useState("idle"); // idle | ok | error
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
+
+  // Login / users
+  const [users, setUsers] = useState(SEED_USERS);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [loginChecking, setLoginChecking] = useState(false);
+
+  // Bulk selection (Orders / Packing tabs)
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkQty, setBulkQty] = useState("");
+  const [bulkDate, setBulkDate] = useState(todayStr());
+  const [bulkRemark, setBulkRemark] = useState("");
+
+  const firstLoad = useRef(true);
+
+  useEffect(() => {
+    (async () => {
+      const e = await storageGet("vt_entries", null);
+      const v = await storageGet("vt_vendors", null);
+      const p = await storageGet("vt_products", null);
+      let url = await storageGet("vt_webapp_url", "");
+      if (!url) {
+        url = DEFAULT_WEBAPP_URL;
+        await storageSet("vt_webapp_url", url);
+      }
+      if (e) {
+        setEntries(e);
+      } else {
+        const seeded = SEED_ENTRIES.map(entry => ({ kind: "product", ...entry, id: uid() }));
+        setEntries(seeded);
+        await storageSet("vt_entries", seeded);
+      }
+      if (v) setVendors(v); else await storageSet("vt_vendors", SEED_VENDORS);
+      if (p) {
+        // purane format me products sirf strings the, ya vendors/packingVendors missing the;
+        // unhe pura migrate karo taaki naya mapping feature turant kaam kare
+        const migrated = p.map(item => {
+          const obj = typeof item === "string" ? { name: item } : item;
+          return { note: "", vendors: [], packingVendors: [], ...obj };
+        });
+        setProducts(migrated);
+        await storageSet("vt_products", migrated);
+      } else {
+        setProducts(SEED_PRODUCT_OBJS);
+        await storageSet("vt_products", SEED_PRODUCT_OBJS);
+      }
+      const pk = await storageGet("vt_packing_items", null);
+      if (pk) {
+        const migratedPk = pk.map(item => ({ note: "", vendors: [], ...item }));
+        setPackingItems(migratedPk);
+      } else {
+        setPackingItems(SEED_PACKING_ITEMS);
+        await storageSet("vt_packing_items", SEED_PACKING_ITEMS);
+      }
+
+      const u = await storageGet("vt_users", null);
+      if (u && u.length) setUsers(u); else await storageSet("vt_users", SEED_USERS);
+
+      if (url) {
+        setWebhookUrl(url);
+        setUrlInput(url);
+        try {
+          const remote = await apiGetAll(url);
+          setEntries(remote.entries);
+          if (remote.vendors && remote.vendors.length) setVendors(remote.vendors);
+          if (remote.products && remote.products.length) setProducts(remote.products);
+          if (remote.packingItems && remote.packingItems.length) setPackingItems(remote.packingItems);
+          if (remote.users && remote.users.length) { setUsers(remote.users); await storageSet("vt_users", remote.users); }
+          setConnStatus("ok");
+        } catch (err) {
+          setConnStatus("error");
+        }
+      }
+
+      // Pehle se login session ho to dobara login na maange
+      const session = await storageGet("vt_session_user", null);
+      if (session) setCurrentUser(session);
+      setAuthChecked(true);
+
+      setLoaded(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    storageSet("vt_entries", entries);
+  }, [entries, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    storageSet("vt_vendors", vendors);
+  }, [vendors, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    storageSet("vt_products", products);
+  }, [products, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    storageSet("vt_packing_items", packingItems);
+  }, [packingItems, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    storageSet("vt_users", users);
+  }, [users, loaded]);
+
+  useEffect(() => { setSelectedIds([]); }, [tab]);
+
+  // Live auto-sync: agar Google Sheet se connect hai, to har 15 second me
+  // background me sheet se latest entries khud-b-khud fetch hoti rahengi,
+  // taaki sheet me kisi ne seedha row add/edit/delete ki ho to yaha bhi dikhe.
+  useEffect(() => {
+    if (!webhookUrl) return;
+    const timer = setInterval(async () => {
+      if (modalOpen) return; // form khula ho to beech me refresh na karo
+      try {
+        const remote = await apiGetAll(webhookUrl);
+        setEntries(remote.entries);
+        if (remote.vendors && remote.vendors.length) setVendors(remote.vendors);
+        if (remote.products && remote.products.length) setProducts(remote.products);
+        if (remote.packingItems && remote.packingItems.length) setPackingItems(remote.packingItems);
+        if (remote.users && remote.users.length) setUsers(remote.users);
+        setConnStatus("ok");
+      } catch (err) {
+        setConnStatus("error");
+      }
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [webhookUrl, modalOpen]);
+
+  const openNew = (kind) => {
+    setEditing({ id: null, kind: kind || "product", vendor: "", product: "", orderQty: "", orderDate: todayStr(), expectedDate: "", receivedQty: "", receivedDate: "", remark: "", contact: "", receipts: [] });
+    setModalOpen(true);
+  };
+  const openEdit = (e) => { setEditing(e); setModalOpen(true); };
+
+  // Ek order kai baar parts me aata hai (jaise 2000 ka order 3-4 khepon me aaye) —
+  // yeh function usi order me ek naya "receipt" (part) jodta hai aur total received qty
+  // khud-b-khud recalculate ho jaata hai. Sheet connected ho to turant push bhi hota hai.
+  const addReceipt = (id, { date, qty, remark }) => {
+    const q = Number(qty) || 0;
+    if (q <= 0) return;
+    let updatedEntry = null;
+    setEntries(list => list.map(e => {
+      if (e.id !== id) return e;
+      const receipts = Array.isArray(e.receipts) ? [...e.receipts] : (Number(e.receivedQty) > 0
+        ? [{ id: uid(), date: e.receivedDate || "", qty: Number(e.receivedQty) || 0, remark: "" }]
+        : []);
+      receipts.push({ id: uid(), date: date || todayStr(), qty: q, remark: remark || "" });
+      const totalRecv = receipts.reduce((s, r) => s + (Number(r.qty) || 0), 0);
+      const lastDate = receipts.reduce((latest, r) => (!latest || (r.date && r.date > latest)) ? r.date : latest, "");
+      updatedEntry = { ...e, receipts, receivedQty: totalRecv, receivedDate: lastDate };
+      return updatedEntry;
+    }));
+    if (webhookUrl && updatedEntry) {
+      apiUpsert(webhookUrl, updatedEntry).catch(() => setConnStatus("error"));
+    }
+  };
+
+  const saveEntry = (form) => {
+    if (form.vendor && !vendors.some(v => v.name === form.vendor)) {
+      setVendors(v => [...v, { name: form.vendor, contact: form.contact || "" }]);
+    }
+    if (form.kind === "packing") {
+      if (form.product && !packingItems.some(p => p.name === form.product)) {
+        setPackingItems(p => [...p, { name: form.product, note: "", vendors: [] }]);
+      }
+    } else if (form.product && !products.some(p => p.name === form.product)) {
+      setProducts(p => [...p, { name: form.product, note: "", vendors: [], packingVendors: [] }]);
+    }
+    const finalEntry = form.id ? form : { ...form, id: uid() };
+    if (form.id) {
+      setEntries(list => list.map(e => e.id === form.id ? finalEntry : e));
+    } else {
+      setEntries(list => [...list, finalEntry]);
+    }
+    if (webhookUrl) {
+      apiUpsert(webhookUrl, finalEntry).catch(() => setConnStatus("error"));
+    }
+    setModalOpen(false);
+  };
+
+  // Entry delete karne se pehle password maangte hai, taaki galti se ya kisi aur se
+  // koi entry delete na ho jaye.
+  const DELETE_PASSWORD = "Unigen123";
+
+  const deleteEntry = (id) => {
+    const pwd = window.prompt("Entry delete karne ke liye password daalo:");
+    if (pwd === null) return; // user ne cancel kiya
+    if (pwd !== DELETE_PASSWORD) {
+      window.alert("Galat password — entry delete nahi hui.");
+      return;
+    }
+    setEntries(list => list.filter(e => e.id !== id));
+    if (webhookUrl) {
+      apiDelete(webhookUrl, id).catch(() => setConnStatus("error"));
+    }
+  };
+
+  const updateProductNote = (name, note) => {
+    setProducts(list => list.map(p => p.name === name ? { ...p, note } : p));
+  };
+
+  const toggleProductVendor = (name, field, vendorName) => {
+    setProducts(list => list.map(p => {
+      if (p.name !== name) return p;
+      const cur = p[field] || [];
+      const next = cur.includes(vendorName) ? cur.filter(v => v !== vendorName) : [...cur, vendorName];
+      return { ...p, [field]: next };
+    }));
+  };
+
+  const togglePackingItemVendor = (name, vendorName) => {
+    setPackingItems(list => list.map(p => {
+      if (p.name !== name) return p;
+      const cur = p.vendors || [];
+      const next = cur.includes(vendorName) ? cur.filter(v => v !== vendorName) : [...cur, vendorName];
+      return { ...p, vendors: next };
+    }));
+  };
+
+  const updatePackingItemNote = (name, note) => {
+    setPackingItems(list => list.map(p => p.name === name ? { ...p, note } : p));
+  };
+
+  const deletePackingItem = (name) => {
+    setPackingItems(list => list.filter(p => p.name !== name));
+  };
+
+  const addProduct = () => {
+    const name = newProductName.trim();
+    if (!name) return;
+    if (!products.some(p => p.name === name)) {
+      setProducts(list => [...list, { name, note: "" }]);
+    }
+    setNewProductName("");
+  };
+
+  const deleteProduct = (name) => {
+    setProducts(list => list.filter(p => p.name !== name));
+  };
+
+  const addPackingItem = () => {
+    const name = newPackingItemName.trim();
+    if (!name) return;
+    if (!packingItems.some(p => p.name === name)) {
+      setPackingItems(list => [...list, { name, note: "", vendors: [] }]);
+    }
+    setNewPackingItemName("");
+  };
+
+  const updateRemark = (id, remark) => {
+    let updatedEntry = null;
+    setEntries(list => list.map(e => {
+      if (e.id !== id) return e;
+      updatedEntry = { ...e, remark };
+      return updatedEntry;
+    }));
+    if (webhookUrl && updatedEntry) {
+      apiUpsert(webhookUrl, updatedEntry).catch(() => setConnStatus("error"));
+    }
+  };
+
+  // ---- Bulk update (ek saath kai orders select karke update karna) ----
+  const toggleSelect = (id) => {
+    setSelectedIds(list => list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
+  };
+  const toggleSelectAll = (ids) => {
+    setSelectedIds(list => (ids.every(id => list.includes(id)) ? list.filter(id => !ids.includes(id)) : Array.from(new Set([...list, ...ids]))));
+  };
+  const clearSelection = () => setSelectedIds([]);
+
+  // Bulk: sabhi selected orders me ek saath same date/qty ka receipt jod do
+  // (jaise "aaj 5 vendors se 100-100 pcs aaye" — ek click me sab update)
+  const bulkAddReceipt = () => {
+    const q = Number(bulkQty) || 0;
+    if (q <= 0 || selectedIds.length === 0) return;
+    selectedIds.forEach(id => addReceipt(id, { date: bulkDate, qty: q, remark: bulkRemark }));
+    setBulkQty(""); setBulkRemark("");
+    clearSelection();
+  };
+
+  // Bulk: selected orders ka remark ek saath set karna
+  const bulkSetRemark = () => {
+    if (selectedIds.length === 0) return;
+    const updated = [];
+    setEntries(list => list.map(e => {
+      if (!selectedIds.includes(e.id)) return e;
+      const ne = { ...e, remark: bulkRemark };
+      updated.push(ne);
+      return ne;
+    }));
+    if (webhookUrl && updated.length) {
+      apiBulkUpsert(webhookUrl, updated).catch(() => setConnStatus("error"));
+    }
+    setBulkRemark("");
+    clearSelection();
+  };
+
+  // Bulk: selected orders ko poora "completed" mark karna (received = ordered)
+  const bulkMarkCompleted = () => {
+    if (selectedIds.length === 0) return;
+    const updated = [];
+    setEntries(list => list.map(e => {
+      if (!selectedIds.includes(e.id)) return e;
+      const order = Number(e.orderQty) || 0;
+      const ne = { ...e, receivedQty: order, receivedDate: e.receivedDate || todayStr(), receipts: [] };
+      updated.push(ne);
+      return ne;
+    }));
+    if (webhookUrl && updated.length) {
+      apiBulkUpsert(webhookUrl, updated).catch(() => setConnStatus("error"));
+    }
+    clearSelection();
+  };
+
+  const bulkDeleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    const pwd = window.prompt(`${selectedIds.length} entries delete karne ke liye password daalo:`);
+    if (pwd === null) return;
+    if (pwd !== DELETE_PASSWORD) {
+      window.alert("Galat password — kuch bhi delete nahi hua.");
+      return;
+    }
+    const ids = [...selectedIds];
+    setEntries(list => list.filter(e => !ids.includes(e.id)));
+    if (webhookUrl) {
+      ids.forEach(id => apiDelete(webhookUrl, id).catch(() => setConnStatus("error")));
+    }
+    clearSelection();
+  };
+
+  // ---- Login / Users ----
+  const handleLogin = async (username, password) => {
+    setLoginError("");
+    setLoginChecking(true);
+    // Agar sheet connected hai to pehle latest users refresh kar lo, taaki
+    // sheet me abhi-abhi update hui password bhi turant kaam kare
+    let currentUsers = users;
+    if (webhookUrl) {
+      try {
+        const remote = await apiGetAll(webhookUrl);
+        if (remote.users && remote.users.length) { currentUsers = remote.users; setUsers(remote.users); }
+      } catch (err) { /* offline / sheet down — local list se hi check kar lo */ }
+    }
+    const match = currentUsers.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+    setLoginChecking(false);
+    if (!match) {
+      setLoginError("Username ya password galat hai.");
+      return;
+    }
+    setCurrentUser(match.username);
+    await storageSet("vt_session_user", match.username);
+  };
+
+  const handleLogout = async () => {
+    setCurrentUser(null);
+    await storageSet("vt_session_user", null);
+  };
+
+  // User Details me naya user add karna ya kisi existing user ka password update karna
+  const saveUser = (user) => {
+    setUsers(list => {
+      const exists = list.some(u => u.username.toLowerCase() === user.username.toLowerCase());
+      const next = exists
+        ? list.map(u => u.username.toLowerCase() === user.username.toLowerCase() ? { ...u, ...user } : u)
+        : [...list, user];
+      if (webhookUrl) {
+        apiSyncUsers(webhookUrl, next).catch(() => setConnStatus("error"));
+      }
+      return next;
+    });
+  };
+
+  const deleteUser = (username) => {
+    setUsers(list => {
+      const next = list.filter(u => u.username.toLowerCase() !== username.toLowerCase());
+      if (webhookUrl) {
+        apiSyncUsers(webhookUrl, next).catch(() => setConnStatus("error"));
+      }
+      return next;
+    });
+  };
+
+  const connectSheet = async () => {
+    const url = urlInput.trim();
+    if (!url) return;
+    setSyncing(true);
+    setSyncMsg("");
+    try {
+      const remote = await apiGetAll(url);
+      setEntries(remote.entries);
+      if (remote.vendors && remote.vendors.length) setVendors(remote.vendors);
+      if (remote.products && remote.products.length) setProducts(remote.products);
+      if (remote.packingItems && remote.packingItems.length) setPackingItems(remote.packingItems);
+      if (remote.users && remote.users.length) setUsers(remote.users);
+      else await apiSyncUsers(url, users).catch(() => {}); // pehli baar connect ho raha ho to default user sheet me bhej do
+      setWebhookUrl(url);
+      await storageSet("vt_webapp_url", url);
+      setConnStatus("ok");
+      setSyncMsg(`Connected. ${remote.entries.length} entries load hui sheet se.`);
+    } catch (err) {
+      setConnStatus("error");
+      setSyncMsg("Connect nahi hua. URL check karo ya deployment access 'Anyone' rakho.");
+    }
+    setSyncing(false);
+  };
+
+  const disconnectSheet = async () => {
+    setWebhookUrl("");
+    setUrlInput("");
+    setConnStatus("idle");
+    await storageSet("vt_webapp_url", "");
+    setSyncMsg("Disconnected. Ab data sirf yaha local save hoga.");
+  };
+
+  const pushAllToSheet = async () => {
+    if (!webhookUrl) return;
+    setSyncing(true);
+    setSyncMsg("");
+    try {
+      await apiBulkSync(webhookUrl, entries);
+      await apiSyncMaster(webhookUrl, { vendors, products, packingItems });
+      await apiSyncUsers(webhookUrl, users);
+      setConnStatus("ok");
+      setSyncMsg(`Sab ${entries.length} entries + vendors/products/packing items/users sheet me push ho gaye.`);
+    } catch (err) {
+      setConnStatus("error");
+      setSyncMsg("Push fail hua, dubara try karo.");
+    }
+    setSyncing(false);
+  };
+
+  const pullFromSheet = async () => {
+    if (!webhookUrl) return;
+    setSyncing(true);
+    setSyncMsg("");
+    try {
+      const remote = await apiGetAll(webhookUrl);
+      setEntries(remote.entries);
+      if (remote.vendors && remote.vendors.length) setVendors(remote.vendors);
+      if (remote.products && remote.products.length) setProducts(remote.products);
+      if (remote.packingItems && remote.packingItems.length) setPackingItems(remote.packingItems);
+      if (remote.users && remote.users.length) setUsers(remote.users);
+      setConnStatus("ok");
+      setSyncMsg(`${remote.entries.length} entries sheet se refresh hui.`);
+    } catch (err) {
+      setConnStatus("error");
+      setSyncMsg("Pull fail hua, dubara try karo.");
+    }
+    setSyncing(false);
+  };
+
+  const productEntries = useMemo(() => entries.filter(e => (e.kind || "product") === "product"), [entries]);
+  const packingEntries = useMemo(() => entries.filter(e => e.kind === "packing"), [entries]);
+
+  const filtered = useMemo(() => {
+    const base = tab === "packing" ? packingEntries : productEntries;
+    return base.filter(e => {
+      if (vendorFilter !== "all" && e.vendor !== vendorFilter) return false;
+      if (statusFilter !== "all") {
+        if (statusFilter === "overdue" && !isOverdue(e)) return false;
+        if (statusFilter !== "overdue" && getStatus(e) !== statusFilter) return false;
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        if (!(e.vendor?.toLowerCase().includes(q) || e.product?.toLowerCase().includes(q) || e.remark?.toLowerCase().includes(q))) return false;
+      }
+      if (dateFrom && e.orderDate && e.orderDate < dateFrom) return false;
+      if (dateTo && e.orderDate && e.orderDate > dateTo) return false;
+      return true;
+    }).sort((a, b) => (b.orderDate || "").localeCompare(a.orderDate || ""));
+  }, [tab, productEntries, packingEntries, vendorFilter, statusFilter, search, dateFrom, dateTo]);
+
+  const stats = useMemo(() => makeStats(productEntries), [productEntries]);
+  const packingStats = useMemo(() => makeStats(packingEntries), [packingEntries]);
+  const vendorChartData = useMemo(() => makeVendorChart(productEntries), [productEntries]);
+  const packingVendorChartData = useMemo(() => makeVendorChart(packingEntries), [packingEntries]);
+  const statusPieData = useMemo(() => makeStatusPie(productEntries), [productEntries]);
+  const packingStatusPieData = useMemo(() => makeStatusPie(packingEntries), [packingEntries]);
+
+  const wrap = {
+    background: COLORS.bg, minHeight: 500, color: COLORS.text,
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+    borderRadius: 14, padding: 20, boxSizing: "border-box",
+  };
+
+  if (!loaded || !authChecked) {
+    return (
+      <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+        <div style={{ color: COLORS.textMuted, fontSize: 13 }}>Loading vendor data...</div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <LoginScreen onLogin={handleLogin} error={loginError} checking={loginChecking} />;
+  }
+
+  const TabBtn = ({ id, label, icon: Icon }) => (
+    <button onClick={() => setTab(id)} style={{
+      display: "flex", alignItems: "center", gap: 7,
+      background: tab === id ? COLORS.amberBg : "transparent",
+      color: tab === id ? COLORS.amber : COLORS.textDim,
+      border: tab === id ? `1px solid ${COLORS.amberBorder}` : "1px solid transparent",
+      borderRadius: 9, padding: "8px 14px", fontSize: 13, fontWeight: 700,
+      cursor: "pointer", letterSpacing: 0.2,
+    }}>
+      <Icon size={15} /> {label}
+    </button>
+  );
+
+  return (
+    <div style={wrap}>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14,
+        marginBottom: 18, background: `linear-gradient(135deg, ${COLORS.brandFrom} 0%, ${COLORS.brandTo} 100%)`,
+        borderRadius: 16, padding: "18px 22px", boxShadow: "0 8px 26px rgba(30,79,216,0.28)",
+      }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.92)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <img src={LOGO_DATA_URI} alt="Unigen" style={{ height: 24, width: "auto" }} />
+            </div>
+            <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: 0.3, color: "#FFFFFF" }}>Vendor Order Tracker</div>
+          </div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", marginTop: 4, marginLeft: 48 }}>
+            UNIGEN — vendor follow-up, pending vs received, dispatch schedule
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700,
+            color: connStatus === "ok" ? "#B8F5CF" : connStatus === "error" ? "#FFC9C6" : "rgba(255,255,255,0.75)",
+          }}>
+            {connStatus === "ok" ? <Cloud size={14} /> : <CloudOff size={14} />}
+            {connStatus === "ok" ? "Sheet connected" : connStatus === "error" ? "Sheet error" : "Local only"}
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", gap: 6 }}>
+            👤 {currentUser}
+            <button onClick={handleLogout} style={{
+              ...smallBtnStyle, padding: "5px 10px", fontSize: 11.5,
+              background: "rgba(255,255,255,0.14)", color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.3)",
+            }}>Logout</button>
+          </div>
+          <button onClick={() => openNew(tab === "packing" ? "packing" : "product")} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: "#FFFFFF", color: COLORS.amber, border: "none",
+            borderRadius: 9, padding: "10px 16px", fontWeight: 800, fontSize: 13, cursor: "pointer",
+          }}>
+            <Plus size={16} /> {tab === "packing" ? "New Packing Entry" : "New Entry"}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 18, borderBottom: `1px solid ${COLORS.borderSoft}`, paddingBottom: 14, flexWrap: "wrap" }}>
+        <TabBtn id="dashboard" label="Dashboard" icon={LayoutDashboard} />
+        <TabBtn id="orders" label="Orders" icon={ClipboardList} />
+        <TabBtn id="packing" label="Packing" icon={PackageCheck} />
+        <TabBtn id="vendors" label="Vendors" icon={Users} />
+        <TabBtn id="products" label="Products" icon={Package} />
+        <TabBtn id="packingItems" label="Packing Items" icon={Package} />
+        <TabBtn id="settings" label="Settings" icon={SettingsIcon} />
+      </div>
+
+      {tab === "dashboard" && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 18 }}>
+            <KPICard label="Total Entries" value={stats.total} sub={`${stats.openCount} open`} color={COLORS.blue} icon={Package} />
+            <KPICard label="Pending Qty" value={stats.pendingQty.toLocaleString("en-IN")} sub="units yet to receive" color={COLORS.orange} icon={Clock} />
+            <KPICard label="Received Qty" value={stats.receivedQty.toLocaleString("en-IN")} sub={`of ${stats.orderQty.toLocaleString("en-IN")} ordered`} color={COLORS.green} icon={CheckCircle2} />
+            <KPICard label="Overdue" value={stats.overdueCount} sub="past expected date" color={COLORS.red} icon={AlertTriangle} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, marginBottom: 18 }}>
+            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>PENDING QTY BY VENDOR (TOP 8)</div>
+              {vendorChartData.length === 0 ? (
+                <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "30px 0", textAlign: "center" }}>Sab clear hai — koi pending qty nahi.</div>
+              ) : (
+                <VendorBarList data={vendorChartData} />
+              )}
+            </div>
+
+            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>STATUS SPLIT</div>
+              {statusPieData.length === 0 ? (
+                <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "30px 0", textAlign: "center" }}>Koi entry nahi hai abhi.</div>
+              ) : (
+                <>
+                  <StatusDonut data={statusPieData} />
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 8 }}>
+                    {statusPieData.map((d, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: COLORS.textDim }}>
+                        <span style={{ width: 9, height: 9, borderRadius: 2, background: d.color, display: "inline-block" }} />
+                        {d.name} ({d.value})
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>
+              OVERDUE / PENDING — NEEDS FOLLOW-UP
+            </div>
+            {productEntries.filter(e => isOverdue(e) || getStatus(e) === "pending").length === 0 ? (
+              <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "10px 0" }}>Kuch bhi follow-up ke liye pending nahi hai.</div>
+            ) : (
+              <OrdersTable
+                rows={productEntries.filter(e => isOverdue(e) || getStatus(e) === "pending").sort((a, b) => (a.expectedDate || "").localeCompare(b.expectedDate || ""))}
+                onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark} compact
+              />
+            )}
+          </div>
+
+          <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.text, margin: "22px 0 10px" }}>PACKING ORDERS</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 18 }}>
+            <KPICard label="Packing Entries" value={packingStats.total} sub={`${packingStats.openCount} open`} color={COLORS.blue} icon={PackageCheck} />
+            <KPICard label="Pending Qty" value={packingStats.pendingQty.toLocaleString("en-IN")} sub="units yet to receive" color={COLORS.orange} icon={Clock} />
+            <KPICard label="Received Qty" value={packingStats.receivedQty.toLocaleString("en-IN")} sub={`of ${packingStats.orderQty.toLocaleString("en-IN")} ordered`} color={COLORS.green} icon={CheckCircle2} />
+            <KPICard label="Overdue" value={packingStats.overdueCount} sub="past expected date" color={COLORS.red} icon={AlertTriangle} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, marginBottom: 18 }}>
+            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>PENDING PACKING QTY BY VENDOR</div>
+              {packingVendorChartData.length === 0 ? (
+                <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "30px 0", textAlign: "center" }}>Sab clear hai — koi pending packing qty nahi.</div>
+              ) : (
+                <VendorBarList data={packingVendorChartData} />
+              )}
+            </div>
+            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>PACKING STATUS SPLIT</div>
+              {packingStatusPieData.length === 0 ? (
+                <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "30px 0", textAlign: "center" }}>Koi packing entry nahi hai abhi.</div>
+              ) : (
+                <>
+                  <StatusDonut data={packingStatusPieData} />
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 8 }}>
+                    {packingStatusPieData.map((d, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: COLORS.textDim }}>
+                        <span style={{ width: 9, height: 9, borderRadius: 2, background: d.color, display: "inline-block" }} />
+                        {d.name} ({d.value})
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === "orders" && (
+        <>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, alignItems: "center" }}>
+            <div style={{ position: "relative", flex: "1 1 200px" }}>
+              <Search size={14} style={{ position: "absolute", left: 10, top: 11, color: COLORS.textMuted }} />
+              <input
+                style={{ ...inputStyle, paddingLeft: 30 }}
+                placeholder="Vendor, product ya remark search karo..."
+                value={search} onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <select style={{ ...inputStyle, width: 170 }} value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}>
+              <option value="all">All vendors</option>
+              {vendors.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
+            </select>
+            <select style={{ ...inputStyle, width: 150 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="all">All status</option>
+              <option value="pending">Pending</option>
+              <option value="partial">Partial</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+            <input type="date" style={{ ...inputStyle, width: 140 }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} title="From order date" />
+            <input type="date" style={{ ...inputStyle, width: 140 }} value={dateTo} onChange={e => setDateTo(e.target.value)} title="To order date" />
+            {(vendorFilter !== "all" || statusFilter !== "all" || search || dateFrom || dateTo) && (
+              <button onClick={() => { setVendorFilter("all"); setStatusFilter("all"); setSearch(""); setDateFrom(""); setDateTo(""); }} style={smallBtnStyle}>
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
+            {filtered.length} of {entries.length} entries dikh rahe hai · checkbox se select karke bulk update kar sakte ho
+          </div>
+
+          <BulkActionBar
+            count={selectedIds.length}
+            bulkQty={bulkQty} setBulkQty={setBulkQty}
+            bulkDate={bulkDate} setBulkDate={setBulkDate}
+            bulkRemark={bulkRemark} setBulkRemark={setBulkRemark}
+            onAddReceipt={bulkAddReceipt} onSetRemark={bulkSetRemark}
+            onMarkCompleted={bulkMarkCompleted} onDelete={bulkDeleteSelected}
+            onClear={clearSelection}
+          />
+
+          {filtered.length === 0 ? (
+            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 40, textAlign: "center", color: COLORS.textMuted }}>
+              Koi entry nahi mili. "New Entry" se add karo.
+            </div>
+          ) : (
+            <OrdersTable
+              rows={filtered} onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark}
+              onAddReceipt={addReceipt} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
+            />
+          )}
+        </>
+      )}
+
+      {tab === "packing" && (
+        <>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, alignItems: "center" }}>
+            <div style={{ position: "relative", flex: "1 1 200px" }}>
+              <Search size={14} style={{ position: "absolute", left: 10, top: 11, color: COLORS.textMuted }} />
+              <input
+                style={{ ...inputStyle, paddingLeft: 30 }}
+                placeholder="Vendor, packing item ya remark search karo..."
+                value={search} onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <select style={{ ...inputStyle, width: 170 }} value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}>
+              <option value="all">All vendors</option>
+              {vendors.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
+            </select>
+            <select style={{ ...inputStyle, width: 150 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="all">All status</option>
+              <option value="pending">Pending</option>
+              <option value="partial">Partial</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+            <input type="date" style={{ ...inputStyle, width: 140 }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} title="From order date" />
+            <input type="date" style={{ ...inputStyle, width: 140 }} value={dateTo} onChange={e => setDateTo(e.target.value)} title="To order date" />
+            {(vendorFilter !== "all" || statusFilter !== "all" || search || dateFrom || dateTo) && (
+              <button onClick={() => { setVendorFilter("all"); setStatusFilter("all"); setSearch(""); setDateFrom(""); setDateTo(""); }} style={smallBtnStyle}>
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
+            {filtered.length} of {packingEntries.length} packing entries dikh rahe hai · checkbox se select karke bulk update kar sakte ho
+          </div>
+
+          <BulkActionBar
+            count={selectedIds.length}
+            bulkQty={bulkQty} setBulkQty={setBulkQty}
+            bulkDate={bulkDate} setBulkDate={setBulkDate}
+            bulkRemark={bulkRemark} setBulkRemark={setBulkRemark}
+            onAddReceipt={bulkAddReceipt} onSetRemark={bulkSetRemark}
+            onMarkCompleted={bulkMarkCompleted} onDelete={bulkDeleteSelected}
+            onClear={clearSelection}
+          />
+
+          {filtered.length === 0 ? (
+            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 40, textAlign: "center", color: COLORS.textMuted }}>
+              Koi packing entry nahi mili. "New Packing Entry" se add karo.
+            </div>
+          ) : (
+            <OrdersTable
+              rows={filtered} onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark}
+              onAddReceipt={addReceipt} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
+            />
+          )}
+        </>
+      )}
+
+      {tab === "vendors" && (
+        <div>
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>ADD VENDOR</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input style={{ ...inputStyle, flex: "1 1 200px" }} placeholder="Vendor name" value={newVendorName} onChange={e => setNewVendorName(e.target.value)} />
+              <input style={{ ...inputStyle, flex: "1 1 160px" }} placeholder="Contact number" value={newVendorContact} onChange={e => setNewVendorContact(e.target.value)} />
+              <button
+                onClick={() => {
+                  if (!newVendorName.trim()) return;
+                  setVendors(v => [...v, { name: newVendorName.trim(), contact: newVendorContact.trim() }]);
+                  setNewVendorName(""); setNewVendorContact("");
+                }}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: COLORS.amber, color: "#FFFFFF", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 800, fontSize: 13, cursor: "pointer" }}
+              >
+                <Plus size={14} /> Add
+              </button>
+            </div>
+          </div>
+
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+            {vendors.map((v, i) => {
+              const vEntries = entries.filter(e => e.vendor === v.name);
+              const openC = vEntries.filter(e => getStatus(e) !== "completed").length;
+              const suppliesProducts = products.filter(p => (p.vendors || []).includes(v.name)).map(p => p.name);
+              const packsFor = products.filter(p => (p.packingVendors || []).includes(v.name)).map(p => p.name);
+              const suppliesPackingItems = packingItems.filter(p => (p.vendors || []).includes(v.name)).map(p => p.name);
+              return (
+                <div key={v.name} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                  padding: "12px 16px", borderBottom: i < vendors.length - 1 ? `1px solid ${COLORS.borderSoft}` : "none", gap: 10,
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{v.name}</div>
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>
+                      {v.contact || "no contact saved"} · {vEntries.length} entries{openC > 0 ? ` · ${openC} open` : ""}
+                    </div>
+                    {suppliesProducts.length > 0 && (
+                      <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 6 }}>
+                        <b style={{ color: COLORS.amber }}>Supplies:</b> {suppliesProducts.join(", ")}
+                      </div>
+                    )}
+                    {packsFor.length > 0 && (
+                      <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 4 }}>
+                        <b style={{ color: COLORS.blue }}>Packs for:</b> {packsFor.join(", ")}
+                      </div>
+                    )}
+                    {suppliesPackingItems.length > 0 && (
+                      <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 4 }}>
+                        <b style={{ color: COLORS.green }}>Packing items:</b> {suppliesPackingItems.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setVendors(list => list.filter(x => x.name !== v.name))}
+                    style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", flexShrink: 0 }}
+                    title="Remove vendor"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {tab === "products" && (
+        <div>
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>ADD PRODUCT</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                style={{ ...inputStyle, flex: "1 1 240px" }} placeholder="Product / SKU name"
+                value={newProductName} onChange={e => setNewProductName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addProduct(); }}
+              />
+              <button
+                onClick={addProduct}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: COLORS.amber, color: "#FFFFFF", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 800, fontSize: 13, cursor: "pointer" }}
+              >
+                <Plus size={14} /> Add
+              </button>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
+            {products.length} products · har product ke saamne note likh sakte ho (jaise packaging detail, spec, ya reminder)
+          </div>
+
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+            {products.length === 0 ? (
+              <div style={{ padding: 24, textAlign: "center", color: COLORS.textMuted, fontSize: 13 }}>Koi product nahi hai abhi.</div>
+            ) : (
+              products.map((p, i) => (
+                <ProductRow
+                  key={p.name}
+                  product={p}
+                  isLast={i === products.length - 1}
+                  usageCount={productEntries.filter(e => e.product === p.name).length}
+                  allVendorNames={vendors.map(v => v.name)}
+                  onSaveNote={note => updateProductNote(p.name, note)}
+                  onToggleVendor={(field, vendorName) => toggleProductVendor(p.name, field, vendorName)}
+                  onDelete={() => deleteProduct(p.name)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "packingItems" && (
+        <div>
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.textDim, marginBottom: 10, letterSpacing: 0.3 }}>ADD PACKING ITEM</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                style={{ ...inputStyle, flex: "1 1 240px" }} placeholder="Packing item name (Dabbi, Sticker, Carton...)"
+                value={newPackingItemName} onChange={e => setNewPackingItemName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addPackingItem(); }}
+              />
+              <button
+                onClick={addPackingItem}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: COLORS.amber, color: "#FFFFFF", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 800, fontSize: 13, cursor: "pointer" }}
+              >
+                <Plus size={14} /> Add
+              </button>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
+            {packingItems.length} packing items · har item ke saamne uska packing vendor map kar sakte ho
+          </div>
+
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+            {packingItems.length === 0 ? (
+              <div style={{ padding: 24, textAlign: "center", color: COLORS.textMuted, fontSize: 13 }}>Koi packing item nahi hai abhi.</div>
+            ) : (
+              packingItems.map((p, i) => (
+                <div key={p.name} style={{
+                  padding: "12px 16px", borderBottom: i === packingItems.length - 1 ? "none" : `1px solid ${COLORS.borderSoft}`,
+                  display: "flex", flexDirection: "column", gap: 10,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ fontSize: 12, color: COLORS.textMuted, whiteSpace: "nowrap" }}>
+                        {packingEntries.filter(e => e.product === p.name).length} entries
+                      </div>
+                      <button onClick={() => deletePackingItem(p.name)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }} title="Remove item">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                  <VendorTagPicker
+                    label="Supplied by (Vendor)"
+                    allVendors={vendors.map(v => v.name)}
+                    selected={p.vendors || []}
+                    onToggle={name => togglePackingItemVendor(p.name, name)}
+                  />
+                  <input
+                    style={{ ...inputStyle, fontSize: 12.5 }}
+                    placeholder="Note likho..."
+                    defaultValue={p.note || ""}
+                    onBlur={e => updatePackingItemNote(p.name, e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "settings" && (
+        <div>
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 18, marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>Google Sheet Connection</div>
+            <div style={{ fontSize: 12.5, color: COLORS.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
+              Apne Google Sheet me Apps Script Web App deploy karo (naya Code.gs neeche diya gaya hai), uska URL yaha paste karo. Uske baad
+              Product Orders, Packing Orders, Vendors, Products, Packing Items aur User Details — sab kuch seedha sheet me save/sync hoga.
+              Sheet me kisi ne direct row add/edit ki ho (ya password badla ho), to yeh app har 10 second me khud-b-khud latest data
+              utha leta hai — Dashboard bhi khud update ho jaata hai.
+            </div>
+            <Field label="Apps Script Web App URL">
+              <input
+                style={inputStyle}
+                placeholder="https://script.google.com/macros/s/.../exec"
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+              />
+            </Field>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              <button onClick={connectSheet} disabled={syncing} style={{
+                display: "flex", alignItems: "center", gap: 6,
+                background: COLORS.amber, color: "#FFFFFF", border: "none",
+                borderRadius: 8, padding: "9px 16px", fontWeight: 800, fontSize: 13,
+                cursor: syncing ? "not-allowed" : "pointer", opacity: syncing ? 0.7 : 1,
+              }}>
+                <RefreshCw size={14} /> Connect and load
+              </button>
+              {webhookUrl && (
+                <>
+                  <button onClick={pullFromSheet} disabled={syncing} style={smallBtnStyle}>Pull latest</button>
+                  <button onClick={pushAllToSheet} disabled={syncing} style={smallBtnStyle}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}><CloudUpload size={13} /> Push all local entries</span>
+                  </button>
+                  <button onClick={disconnectSheet} style={{ ...smallBtnStyle, color: COLORS.red }}>Disconnect</button>
+                </>
+              )}
+            </div>
+            {syncMsg && <div style={{ fontSize: 12.5, color: connStatus === "error" ? COLORS.red : COLORS.green, marginTop: 12 }}>{syncMsg}</div>}
+          </div>
+
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 18, marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>User Details (Login)</div>
+            <div style={{ fontSize: 12.5, color: COLORS.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
+              Yaha jo bhi username/password add ya update karoge, wahi login screen me use hoga. Sheet connected ho to yeh
+              seedha "User Details" sheet me save/update ho jaata hai, taaki sheet se seedha password badalne par bhi login turant
+              usi se ho.
+            </div>
+            <div style={{ background: COLORS.panelSoft, border: `1px solid ${COLORS.borderSoft}`, borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
+              {users.length === 0 ? (
+                <div style={{ padding: 18, textAlign: "center", color: COLORS.textMuted, fontSize: 13 }}>Koi user nahi hai.</div>
+              ) : (
+                users.map((u, i) => (
+                  <div key={u.username} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                    borderBottom: i === users.length - 1 ? "none" : `1px solid ${COLORS.borderSoft}`,
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, minWidth: 120 }}>{u.username}</div>
+                    <input
+                      type="password"
+                      style={{ ...inputStyle, fontSize: 12.5, maxWidth: 200 }}
+                      defaultValue={u.password}
+                      placeholder="Password"
+                      onBlur={e => { if (e.target.value && e.target.value !== u.password) saveUser({ username: u.username, password: e.target.value, name: u.name || "" }); }}
+                      onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+                    />
+                    <div style={{ flex: 1 }} />
+                    {users.length > 1 && (
+                      <button onClick={() => deleteUser(u.username)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }} title="User hatao">
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 0.4, marginBottom: 8, textTransform: "uppercase" }}>
+              Naya user add karo
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input style={{ ...inputStyle, maxWidth: 200 }} placeholder="Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} />
+              <input style={{ ...inputStyle, maxWidth: 200 }} placeholder="Password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} />
+              <button
+                onClick={() => {
+                  const uname = newUsername.trim();
+                  if (!uname || !newUserPassword) return;
+                  saveUser({ username: uname, password: newUserPassword });
+                  setNewUsername(""); setNewUserPassword("");
+                }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: COLORS.amber, color: "#FFFFFF", border: "none",
+                  borderRadius: 8, padding: "9px 16px", fontWeight: 800, fontSize: 13, cursor: "pointer",
+                }}
+              >
+                <Plus size={14} /> Add user
+              </button>
+            </div>
+          </div>
+
+          <div style={{ background: COLORS.panelSoft, border: `1px solid ${COLORS.borderSoft}`, borderRadius: 12, padding: 18 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Setup steps</div>
+            <ol style={{ fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.9, paddingLeft: 20, margin: 0 }}>
+              <li>Google Sheet kholo &rarr; Extensions &rarr; Apps Script.</li>
+              <li>Wahan diya gaya naya Code.gs paste karo (purana replace kar do), Save karo.</li>
+              <li>Deploy &rarr; New deployment &rarr; type: Web app.</li>
+              <li>Execute as: Me. Who has access: Anyone.</li>
+              <li>Deploy karke jo URL mile, wo yaha paste karke "Connect and load" dabao.</li>
+              <li>Sheet me apne aap "User Details" tab ban jaayega — chaho to wahin se bhi username/password edit kar sakte ho.</li>
+            </ol>
+          </div>
+        </div>
+      )}
+
+      <EntryModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={saveEntry} vendors={vendors} products={products} packingItems={packingItems} initial={editing || {}} />
+    </div>
+  );
+}
+
+function RemarkCell({ entry, onUpdateRemark }) {
+  const [val, setVal] = useState(entry.remark || "");
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => { setVal(entry.remark || ""); setDirty(false); }, [entry.id, entry.remark]);
+
+  const commit = () => {
+    if (dirty) onUpdateRemark(entry.id, val);
+    setDirty(false);
+  };
+
+  return (
+    <input
+      value={val}
+      placeholder="Note / remark likho..."
+      onChange={e => { setVal(e.target.value); setDirty(true); }}
+      onBlur={commit}
+      onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+      style={{
+        width: "100%", minWidth: 140, background: "transparent", border: "none",
+        borderBottom: `1px dashed ${COLORS.borderSoft}`, color: COLORS.textDim,
+        fontSize: 12.5, padding: "3px 2px", outline: "none", fontFamily: "inherit",
+      }}
+    />
+  );
+}
+
+function ReceiptLog({ entry, onAddReceipt }) {
+  const [qty, setQty] = useState("");
+  const [date, setDate] = useState(todayStr());
+  const [remark, setRemark] = useState("");
+  const receipts = Array.isArray(entry.receipts) ? entry.receipts : [];
+
+  const submit = () => {
+    const q = Number(qty) || 0;
+    if (q <= 0) return;
+    onAddReceipt(entry.id, { date, qty: q, remark });
+    setQty(""); setRemark("");
+  };
+
+  return (
+    <div style={{ padding: "12px 16px", background: COLORS.panelSoft, borderTop: `1px solid ${COLORS.borderSoft}` }}>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 0.4, marginBottom: 8, textTransform: "uppercase" }}>
+        Receiving log — order kai parts me aaya to yaha sab dikhega
+      </div>
+      {receipts.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: COLORS.textMuted, marginBottom: 10 }}>Abhi tak koi part receive nahi hui hai.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+          {receipts.map((r, i) => (
+            <div key={r.id || i} style={{ display: "flex", gap: 12, fontSize: 12.5, color: COLORS.textDim }}>
+              <span style={{ width: 90, color: COLORS.textMuted }}>{fmtDate(r.date)}</span>
+              <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700, color: COLORS.green }}>+{r.qty}</span>
+              {r.remark && <span style={{ color: COLORS.textMuted }}>{r.remark}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ width: 130 }}>
+          <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Date</div>
+          <input type="date" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px" }} value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+        <div style={{ width: 100 }}>
+          <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Qty received</div>
+          <input type="number" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px" }} placeholder="0" value={qty} onChange={e => setQty(e.target.value)} />
+        </div>
+        <div style={{ flex: "1 1 140px" }}>
+          <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Note (optional)</div>
+          <input style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px" }} placeholder="e.g. 1st part" value={remark} onChange={e => setRemark(e.target.value)} />
+        </div>
+        <button onClick={submit} disabled={!qty} style={{
+          display: "flex", alignItems: "center", gap: 5,
+          background: qty ? COLORS.amber : COLORS.borderSoft, color: qty ? "#FFFFFF" : COLORS.textMuted,
+          border: "none", borderRadius: 8, padding: "8px 14px", fontWeight: 800, fontSize: 12.5,
+          cursor: qty ? "pointer" : "not-allowed", whiteSpace: "nowrap",
+        }}>
+          <Plus size={13} /> Add part
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, compact, selectedIds, onToggleSelect, onToggleSelectAll }) {
+  const [expandedId, setExpandedId] = useState(null);
+  const selectable = !!(selectedIds && onToggleSelect);
+  const allSelected = selectable && rows.length > 0 && rows.every(r => selectedIds.includes(r.id));
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <thead>
+          <tr>
+            {selectable && (
+              <th style={{ padding: "8px 6px", borderBottom: `1px solid ${COLORS.borderSoft}` }}>
+                <input type="checkbox" checked={allSelected} onChange={() => onToggleSelectAll(rows.map(r => r.id))} />
+              </th>
+            )}
+            {["Vendor", "Product", "Order Qty", "Order Date", "Expected", "Received Qty", "Pending", "Status", "Remark", ""].map((h, i) => (
+              <th key={i} style={{
+                textAlign: i > 1 && i < 6 ? "right" : "left", padding: "8px 10px",
+                color: COLORS.textMuted, fontSize: 11, fontWeight: 700, letterSpacing: 0.4,
+                borderBottom: `1px solid ${COLORS.borderSoft}`, whiteSpace: "nowrap",
+              }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(e => {
+            const order = Number(e.orderQty) || 0;
+            const recv = getReceivedQty(e);
+            const pending = Math.max(order - recv, 0);
+            const status = isOverdue(e) ? "overdue" : getStatus(e);
+            const isExpanded = expandedId === e.id;
+            return (
+              <React.Fragment key={e.id}>
+                <tr style={{ borderBottom: isExpanded ? "none" : `1px solid ${COLORS.borderSoft}` }}>
+                  {selectable && (
+                    <td style={{ padding: "10px 6px" }}>
+                      <input type="checkbox" checked={selectedIds.includes(e.id)} onChange={() => onToggleSelect(e.id)} />
+                    </td>
+                  )}
+                  <td style={{ padding: "10px 10px", fontWeight: 600 }}>{e.vendor}</td>
+                  <td style={{ padding: "10px 10px", color: COLORS.textDim }}>{e.product}</td>
+                  <td style={{ padding: "10px 10px", textAlign: "right", fontFamily: "ui-monospace, monospace" }}>{order}</td>
+                  <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{fmtDate(e.orderDate)}</td>
+                  <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{fmtDate(e.expectedDate)}</td>
+                  <td style={{ padding: "10px 10px", textAlign: "right" }}>
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : e.id)}
+                      title="Receiving log dekho / part jodo"
+                      style={{
+                        background: "none", border: "none", cursor: "pointer", padding: 0,
+                        fontFamily: "ui-monospace, monospace", fontSize: 13,
+                        color: COLORS.text, textDecoration: "underline", textDecorationStyle: "dotted",
+                      }}
+                    >
+                      {recv}{Array.isArray(e.receipts) && e.receipts.length > 1 ? ` (${e.receipts.length}x)` : ""}
+                    </button>
+                  </td>
+                  <td style={{ padding: "10px 10px", textAlign: "right", fontFamily: "ui-monospace, monospace", color: pending > 0 ? COLORS.amber : COLORS.textMuted, fontWeight: 700 }}>{pending}</td>
+                  <td style={{ padding: "10px 10px" }}><Badge status={status} /></td>
+                  <td style={{ padding: "10px 10px", minWidth: 150 }}>
+                    <RemarkCell entry={e} onUpdateRemark={onUpdateRemark} />
+                  </td>
+                  <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                    <button onClick={() => setExpandedId(isExpanded ? null : e.id)} style={{ background: "none", border: "none", color: COLORS.amber, cursor: "pointer", marginRight: 8, fontSize: 11, fontWeight: 800 }}>
+                      {isExpanded ? "Close" : "+ Part"}
+                    </button>
+                    <button onClick={() => onEdit(e)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", marginRight: 8 }}>
+                      <Pencil size={14} />
+                    </button>
+                    {!compact && (
+                      <button onClick={() => onDelete(e.id)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }}>
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+                {isExpanded && (
+                  <tr style={{ borderBottom: `1px solid ${COLORS.borderSoft}` }}>
+                    <td colSpan={selectable ? 10 : 9} style={{ padding: 0 }}>
+                      <ReceiptLog entry={e} onAddReceipt={onAddReceipt} />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+</script>
+</body>
+</html>
