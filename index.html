@@ -10,8 +10,8 @@
   html, body { margin: 0; padding: 0; background: #EEF3FC; }
   * { box-sizing: border-box; }
   body { -webkit-tap-highlight-color: transparent; }
-  #root { max-width: 1180px; margin: 0 auto; padding: 10px; }
-  @media (min-width: 700px) { #root { padding: 22px; } }
+  #root { width: 100%; margin: 0 auto; padding: 10px; box-sizing: border-box; }
+  @media (min-width: 700px) { #root { padding: 18px 20px; } }
   select, input, button { font-family: inherit; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: #B7CDF9; border-radius: 8px; }
@@ -202,6 +202,14 @@ function CloudUpload(props) {
     </IconBase>
   );
 }
+function Flag(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 3v18" />
+      <path d="M5 4h11l-2.2 3.5L16 11H5" />
+    </IconBase>
+  );
+}
 
 
 // UNIGEN brand theme — bright blue + white, same look on login screen aur
@@ -231,6 +239,9 @@ const COLORS = {
   orange: "#F59E0B",
   orangeBg: "#FDF1DC",
   orangeBorder: "#F5D093",
+  urgent: "#E1352F",
+  urgentBg: "#FDEDEC",
+  urgentBorder: "#F3B7B4",
   // Brand blue gradient (login screen background, top header bar)
   brandFrom: "#1E4FD8",
   brandTo: "#2F7BF0",
@@ -608,6 +619,20 @@ function isOverdue(e) {
   return new Date(e.expectedDate) < new Date(todayStr());
 }
 
+function isUrgent(e) {
+  return !!e.urgent;
+}
+
+// Urgent entries hamesha list ke top pe aaye — baaki sab apne purane order (date desc) me.
+function sortWithUrgentFirst(list, compareFn) {
+  return [...list].sort((a, b) => {
+    const ua = isUrgent(a) ? 1 : 0;
+    const ub = isUrgent(b) ? 1 : 0;
+    if (ua !== ub) return ub - ua;
+    return compareFn ? compareFn(a, b) : 0;
+  });
+}
+
 const STATUS_META = {
   pending: { label: "Pending", color: COLORS.amber, bg: COLORS.amberBg, border: COLORS.amberBorder, icon: Clock },
   partial: { label: "Partial", color: COLORS.blue, bg: COLORS.blueBg, border: COLORS.blueBorder, icon: Truck },
@@ -787,6 +812,38 @@ function Badge({ status }) {
   );
 }
 
+function UrgentBadge() {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: COLORS.urgentBg, color: COLORS.urgent, border: `1px solid ${COLORS.urgentBorder}`,
+      borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 800,
+      letterSpacing: 0.3, whiteSpace: "nowrap",
+    }}>
+      <AlertTriangle size={12} strokeWidth={2.5} />
+      URGENT
+    </span>
+  );
+}
+
+function UrgentToggleBtn({ urgent, onClick, size }) {
+  return (
+    <button
+      onClick={onClick}
+      title={urgent ? "Urgent hata do" : "Urgent mark karo"}
+      style={{
+        background: urgent ? COLORS.urgentBg : "transparent",
+        border: `1px solid ${urgent ? COLORS.urgentBorder : COLORS.border}`,
+        color: urgent ? COLORS.urgent : COLORS.textMuted,
+        borderRadius: 7, padding: "4px 6px", cursor: "pointer",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      <Flag size={size || 13} strokeWidth={2.2} fill={urgent ? COLORS.urgent : "none"} />
+    </button>
+  );
+}
+
 function Field({ label, children }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -812,7 +869,7 @@ const inputStyle = {
 };
 
 function emptySkuRow() {
-  return { rowId: uid(), product: "", orderQty: "", customProduct: false };
+  return { rowId: uid(), product: "", orderQty: "", sku: "", materials: [], customProduct: false };
 }
 
 function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, packingItems, initial }) {
@@ -824,11 +881,13 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
   const [multiMode, setMultiMode] = useState(false);
   const [skuRows, setSkuRows] = useState([emptySkuRow(), emptySkuRow()]);
 
-  const itemsList = form.kind === "packing" ? packingItems : products;
+  const kind = form.kind || "product";
+  const itemsList = kind === "product" ? products : packingItems;
+  const isPackingOut = kind === "packingOut";
 
   useEffect(() => {
-    setForm(initial);
-    const list = initial.kind === "packing" ? packingItems : products;
+    setForm({ materials: [], ...initial });
+    const list = (initial.kind || "product") === "product" ? products : packingItems;
     setCustomProduct(initial.product && !list.some(p => p.name === initial.product));
     setCustomVendor(initial.vendor && !vendors.some(v => v.name === initial.vendor));
     setMultiMode(false);
@@ -838,27 +897,61 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
   if (!open) return null;
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const setKind = (k) => setForm(f => ({ ...f, kind: k, product: "" }));
 
-  const canSave = form.vendor && form.product && form.orderQty;
+  // Naya packing/packing-out entry banate waqt ek hi SKU ke liye kai materials
+  // (jaise Dabbi + Tray dono) ek saath select ho sakte hai — edit karte waqt
+  // (ya Product Order me) single material hi rehta hai, wo pehle jaisa hi kaam karega.
+  const useMultiMaterial = kind !== "product" && !isEditing;
+  const filledMaterials = (form.materials || []).filter(Boolean);
+
+  const canSave = useMultiMaterial
+    ? !!(form.vendor && filledMaterials.length && form.orderQty)
+    : !!(form.vendor && form.product && form.orderQty);
+
+  const submitSingle = () => {
+    if (!useMultiMaterial) { onSave(form); return; }
+    const rows = filledMaterials.map(m => ({ product: m, orderQty: form.orderQty, sku: form.sku || "" }));
+    onSaveMulti(
+      {
+        vendor: form.vendor, contact: form.contact, orderDate: form.orderDate,
+        expectedDate: form.expectedDate, remark: form.remark, kind: kind,
+        poNo: form.poNo || "", urgent: !!form.urgent,
+      },
+      rows
+    );
+  };
 
   const selectedVendorObj = vendors.find(v => v.name === form.vendor);
-  const autoPackingHint = !!(selectedVendorObj && selectedVendorObj.autoPacking) && form.kind !== "packing";
+  const autoPackingHint = !!(selectedVendorObj && selectedVendorObj.autoPacking) && kind === "product";
 
   const setSkuRow = (rowId, patch) => setSkuRows(rows => rows.map(r => (r.rowId === rowId ? { ...r, ...patch } : r)));
   const addSkuRow = () => setSkuRows(rows => [...rows, emptySkuRow()]);
   const removeSkuRow = (rowId) => setSkuRows(rows => (rows.length > 1 ? rows.filter(r => r.rowId !== rowId) : rows));
-  const validSkuCount = skuRows.filter(r => r.product && r.orderQty).length;
-  const canSaveMulti = !!(form.vendor && validSkuCount > 0);
+  const setRowMaterials = (rowId, arr) => setSkuRow(rowId, { materials: arr });
+  const rowFilledMaterials = (r) => (r.materials || []).filter(Boolean);
+  const isRowValid = (r) => kind === "product" ? !!(r.product && r.orderQty) : !!(rowFilledMaterials(r).length && r.orderQty);
+  const validSkuCount = kind === "product"
+    ? skuRows.filter(isRowValid).length
+    : skuRows.reduce((sum, r) => isRowValid(r) ? sum + rowFilledMaterials(r).length : sum, 0);
+  const canSaveMulti = !!(form.vendor && skuRows.some(isRowValid));
 
   const submitMulti = () => {
     if (!canSaveMulti || !onSaveMulti) return;
+    let expandedRows = [];
+    if (kind === "product") {
+      expandedRows = skuRows.filter(isRowValid).map(r => ({ product: r.product, orderQty: r.orderQty, sku: r.sku || "" }));
+    } else {
+      skuRows.filter(isRowValid).forEach(r => {
+        rowFilledMaterials(r).forEach(m => expandedRows.push({ product: m, orderQty: r.orderQty, sku: r.sku || "" }));
+      });
+    }
     onSaveMulti(
       {
         vendor: form.vendor, contact: form.contact, orderDate: form.orderDate,
-        expectedDate: form.expectedDate, remark: form.remark, kind: form.kind || "product",
+        expectedDate: form.expectedDate, remark: form.remark, kind: kind,
+        poNo: form.poNo || "", urgent: !!form.urgent,
       },
-      skuRows.filter(r => r.product && r.orderQty)
+      expandedRows
     );
   };
 
@@ -873,6 +966,8 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
 
   const gridCols = isMobile ? "1fr" : "1fr 1fr";
 
+  const kindLabel = kind === "product" ? "Product Order" : kind === "packing" ? "Packing Order" : "Packing Out";
+
   return (
     <div style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
@@ -882,27 +977,18 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
       <div style={modalBoxStyle} onClick={e => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.text, letterSpacing: 0.3 }}>
-            {isEditing ? "Edit Entry" : multiMode ? "New Multi-SKU Order" : "New Entry"}
+            {isEditing ? "Edit Entry" : multiMode ? `New Multi-SKU ${kindLabel}` : `New ${kindLabel}`}
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }}>
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button onClick={() => setKind("product")} style={{
-            flex: 1, padding: "8px 10px", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
-            background: form.kind !== "packing" ? COLORS.amberBg : COLORS.panelAlt,
-            color: form.kind !== "packing" ? COLORS.amber : COLORS.textMuted,
-            border: `1px solid ${form.kind !== "packing" ? COLORS.amberBorder : COLORS.border}`,
-          }}>Product Order</button>
-          <button onClick={() => setKind("packing")} style={{
-            flex: 1, padding: "8px 10px", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
-            background: form.kind === "packing" ? COLORS.amberBg : COLORS.panelAlt,
-            color: form.kind === "packing" ? COLORS.amber : COLORS.textMuted,
-            border: `1px solid ${form.kind === "packing" ? COLORS.amberBorder : COLORS.border}`,
-          }}>Packing Order</button>
-        </div>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "#16A34A", color: "#FFFFFF", borderRadius: 8,
+          padding: "8px 8px", marginBottom: 12, fontSize: 12.5, fontWeight: 800, letterSpacing: 0.3,
+        }}>{kindLabel}</div>
 
         {!isEditing && (
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -920,6 +1006,19 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
             }}>Multiple SKUs (ek vendor se)</button>
           </div>
         )}
+
+        <label style={{
+          display: "flex", alignItems: "center", gap: 8, marginBottom: 16, cursor: "pointer",
+          background: form.urgent ? COLORS.urgentBg : COLORS.panelAlt,
+          border: `1px solid ${form.urgent ? COLORS.urgentBorder : COLORS.border}`,
+          borderRadius: 8, padding: "9px 12px",
+        }}>
+          <input type="checkbox" checked={!!form.urgent} onChange={e => set("urgent", e.target.checked)} />
+          <Flag size={14} color={form.urgent ? COLORS.urgent : COLORS.textMuted} fill={form.urgent ? COLORS.urgent : "none"} />
+          <span style={{ fontSize: 13, fontWeight: 800, color: form.urgent ? COLORS.urgent : COLORS.textDim }}>
+            Mark as URGENT — list ke top pe highlight ho ke dikhega
+          </span>
+        </label>
 
         <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 14 }}>
           <Field label="Vendor Name">
@@ -944,20 +1043,33 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
             <input style={inputStyle} placeholder="Optional" value={form.contact || ""} onChange={e => set("contact", e.target.value)} />
           </Field>
 
-          {!multiMode && (
-            <Field label={form.kind === "packing" ? "Packing Material" : "Product / SKU"}>
+          <Field label="PO No.">
+            <input style={inputStyle} placeholder="Purchase Order number (optional)" value={form.poNo || ""} onChange={e => set("poNo", e.target.value)} />
+          </Field>
+
+          {!multiMode && kind !== "product" && (
+            <Field label="Product / SKU (kis product ke liye)">
+              <select style={inputStyle} value={form.sku || ""} onChange={e => set("sku", e.target.value)}>
+                <option value="">Select SKU (optional)</option>
+                {products.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+              </select>
+            </Field>
+          )}
+
+          {!multiMode && !useMultiMaterial && (
+            <Field label={isPackingOut ? "Packing Material" : kind === "packing" ? "Packing Material" : "Product / SKU"}>
               {!customProduct ? (
                 <select style={inputStyle} value={form.product || ""} onChange={e => {
                   if (e.target.value === "__custom__") { setCustomProduct(true); set("product", ""); }
                   else set("product", e.target.value);
                 }}>
-                  <option value="">{form.kind === "packing" ? "Select packing material" : "Select product"}</option>
+                  <option value="">{kind === "product" ? "Select product" : "Select packing material"}</option>
                   {itemsList.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                  <option value="__custom__">+ Add new {form.kind === "packing" ? "packing material" : "product"}...</option>
+                  <option value="__custom__">+ Add new {kind === "product" ? "product" : "packing material"}...</option>
                 </select>
               ) : (
                 <div style={{ display: "flex", gap: 6 }}>
-                  <input style={inputStyle} placeholder={form.kind === "packing" ? "Packing material name" : "Product / SKU name"} value={form.product || ""} onChange={e => set("product", e.target.value)} />
+                  <input style={inputStyle} placeholder={kind === "product" ? "Product / SKU name" : "Packing material name"} value={form.product || ""} onChange={e => set("product", e.target.value)} />
                   <button onClick={() => setCustomProduct(false)} style={{ ...smallBtnStyle }}>List</button>
                 </div>
               )}
@@ -970,21 +1082,35 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
             </Field>
           )}
 
+          {!multiMode && useMultiMaterial && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Field label="Packing Material — Dabbi, uske aage Tray, jitne chahiye sab add karo">
+                <MaterialSlotPicker
+                  allItems={packingItems.map(p => p.name)}
+                  selected={form.materials || []}
+                  onChange={arr => set("materials", arr)}
+                />
+              </Field>
+            </div>
+          )}
+
           {!multiMode && (
-            <Field label="Order Qty">
+            <Field label={isPackingOut ? "Qty to Dispatch" : "Order Qty"}>
               <input type="number" style={inputStyle} placeholder="0" value={form.orderQty ?? ""} onChange={e => set("orderQty", e.target.value)} />
             </Field>
           )}
 
-          <Field label="Order Date">
+          <Field label={isPackingOut ? "Dispatch Date" : "Order Date"}>
             <input type="date" style={inputStyle} value={form.orderDate || ""} onChange={e => set("orderDate", e.target.value)} />
           </Field>
 
-          <Field label="Expected / Dispatch Date">
-            <input type="date" style={inputStyle} value={form.expectedDate || ""} onChange={e => set("expectedDate", e.target.value)} />
-          </Field>
+          {!isPackingOut && (
+            <Field label="Expected / Dispatch Date">
+              <input type="date" style={inputStyle} value={form.expectedDate || ""} onChange={e => set("expectedDate", e.target.value)} />
+            </Field>
+          )}
 
-          {!multiMode && (
+          {!multiMode && !isPackingOut && (
             <>
               <Field label="Received Qty">
                 <input type="number" style={inputStyle} placeholder="0" value={form.receivedQty ?? ""} onChange={e => set("receivedQty", e.target.value)} />
@@ -1015,30 +1141,48 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
         {multiMode && (
           <div style={{ marginTop: 18 }}>
             <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 0.4, marginBottom: 8, textTransform: "uppercase" }}>
-              {form.kind === "packing" ? "Packing materials" : "SKUs"} — is vendor se ek saath add karo
+              {kind === "product" ? "SKUs" : "Packing materials"} — is vendor se ek saath add karo
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {skuRows.map((row) => {
-                const list = form.kind === "packing" ? packingItems : products;
                 return (
                   <div key={row.rowId} style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                    <div style={{ flex: "2 1 200px" }}>
-                      {!row.customProduct ? (
-                        <select style={inputStyle} value={row.product} onChange={e => {
-                          if (e.target.value === "__custom__") setSkuRow(row.rowId, { customProduct: true, product: "" });
-                          else setSkuRow(row.rowId, { product: e.target.value });
-                        }}>
-                          <option value="">{form.kind === "packing" ? "Select packing material" : "Select product"}</option>
-                          {list.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                          <option value="__custom__">+ Add new...</option>
-                        </select>
-                      ) : (
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <input style={inputStyle} placeholder="Naya naam likho" value={row.product} onChange={e => setSkuRow(row.rowId, { product: e.target.value })} />
-                          <button onClick={() => setSkuRow(row.rowId, { customProduct: false, product: "" })} style={smallBtnStyle}>List</button>
+                    {kind === "product" ? (
+                      <div style={{ flex: "2 1 200px" }}>
+                        {!row.customProduct ? (
+                          <select style={inputStyle} value={row.product} onChange={e => {
+                            if (e.target.value === "__custom__") setSkuRow(row.rowId, { customProduct: true, product: "" });
+                            else setSkuRow(row.rowId, { product: e.target.value });
+                          }}>
+                            <option value="">Select product</option>
+                            {products.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                            <option value="__custom__">+ Add new...</option>
+                          </select>
+                        ) : (
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <input style={inputStyle} placeholder="Naya naam likho" value={row.product} onChange={e => setSkuRow(row.rowId, { product: e.target.value })} />
+                            <button onClick={() => setSkuRow(row.rowId, { customProduct: false, product: "" })} style={smallBtnStyle}>List</button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ flex: "1.4 1 150px", minWidth: 130 }}>
+                          <select style={inputStyle} value={row.sku || ""} onChange={e => setSkuRow(row.rowId, { sku: e.target.value })}>
+                            <option value="">SKU (optional)</option>
+                            {products.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                          </select>
                         </div>
-                      )}
-                    </div>
+                        <div style={{ flex: "2.4 1 220px" }}>
+                          <MaterialSlotPicker
+                            allItems={packingItems.map(p => p.name)}
+                            selected={row.materials || []}
+                            onChange={arr => setRowMaterials(row.rowId, arr)}
+                            compact
+                          />
+                        </div>
+                      </>
+                    )}
                     <div style={{ flex: "1 1 90px", minWidth: 90 }}>
                       <input type="number" style={inputStyle} placeholder="Qty" value={row.orderQty} onChange={e => setSkuRow(row.rowId, { orderQty: e.target.value })} />
                     </div>
@@ -1076,7 +1220,7 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
           ) : (
             <button
               disabled={!canSave}
-              onClick={() => onSave(form)}
+              onClick={submitSingle}
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 background: canSave ? COLORS.amber : COLORS.borderSoft,
@@ -1084,7 +1228,7 @@ function EntryModal({ open, onClose, onSave, onSaveMulti, vendors, products, pac
                 border: "none", borderRadius: 8, padding: "9px 18px",
                 fontWeight: 800, fontSize: 13, cursor: canSave ? "pointer" : "not-allowed",
               }}>
-              <Save size={14} /> Save Entry
+              <Save size={14} /> {useMultiMaterial && filledMaterials.length > 1 ? `Save ${filledMaterials.length} Entries` : "Save Entry"}
             </button>
           )}
         </div>
@@ -1098,7 +1242,7 @@ const smallBtnStyle = {
   fontSize: 13, fontWeight: 600, cursor: "pointer",
 };
 
-function BulkActionBar({ count, bulkQty, setBulkQty, bulkDate, setBulkDate, bulkRemark, setBulkRemark, onAddReceipt, onSetRemark, onMarkCompleted, onDelete, onClear }) {
+function BulkActionBar({ count, bulkQty, setBulkQty, bulkDate, setBulkDate, bulkRemark, setBulkRemark, onAddReceipt, onSetRemark, onMarkCompleted, onMarkUrgent, onUnmarkUrgent, onDelete, onClear, showReceipt = true, showCompleted = true }) {
   if (count === 0) return null;
   return (
     <div style={{
@@ -1108,23 +1252,31 @@ function BulkActionBar({ count, bulkQty, setBulkQty, bulkDate, setBulkDate, bulk
       <div style={{ fontSize: 12.5, fontWeight: 800, color: COLORS.amber, marginRight: 4, whiteSpace: "nowrap" }}>
         {count} selected —
       </div>
-      <div>
-        <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Date</div>
-        <input type="date" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px", width: 130 }} value={bulkDate} onChange={e => setBulkDate(e.target.value)} />
-      </div>
-      <div>
-        <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Qty to add each</div>
-        <input type="number" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px", width: 100 }} placeholder="0" value={bulkQty} onChange={e => setBulkQty(e.target.value)} />
-      </div>
+      {showReceipt && (
+        <div>
+          <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Date</div>
+          <input type="date" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px", width: 130 }} value={bulkDate} onChange={e => setBulkDate(e.target.value)} />
+        </div>
+      )}
+      {showReceipt && (
+        <div>
+          <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Qty to add each</div>
+          <input type="number" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px", width: 100 }} placeholder="0" value={bulkQty} onChange={e => setBulkQty(e.target.value)} />
+        </div>
+      )}
       <div style={{ flex: "1 1 160px" }}>
         <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Remark (optional)</div>
         <input style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px" }} placeholder="Sab par lagane wala note" value={bulkRemark} onChange={e => setBulkRemark(e.target.value)} />
       </div>
-      <button onClick={onAddReceipt} disabled={!bulkQty} style={{ ...smallBtnStyle, background: bulkQty ? COLORS.amber : COLORS.borderSoft, color: bulkQty ? "#FFFFFF" : COLORS.textMuted, fontWeight: 800 }}>
-        + Add receipt to all
-      </button>
+      {showReceipt && (
+        <button onClick={onAddReceipt} disabled={!bulkQty} style={{ ...smallBtnStyle, background: bulkQty ? COLORS.amber : COLORS.borderSoft, color: bulkQty ? "#FFFFFF" : COLORS.textMuted, fontWeight: 800 }}>
+          + Add receipt to all
+        </button>
+      )}
       <button onClick={onSetRemark} disabled={!bulkRemark} style={smallBtnStyle}>Set remark on all</button>
-      <button onClick={onMarkCompleted} style={smallBtnStyle}>Mark all completed</button>
+      {showCompleted && <button onClick={onMarkCompleted} style={smallBtnStyle}>Mark all completed</button>}
+      <button onClick={onMarkUrgent} style={{ ...smallBtnStyle, color: COLORS.urgent, borderColor: COLORS.urgentBorder }}>🚩 Mark urgent</button>
+      <button onClick={onUnmarkUrgent} style={smallBtnStyle}>Unmark urgent</button>
       <button onClick={onDelete} style={{ ...smallBtnStyle, color: COLORS.red }}>Delete selected</button>
       <button onClick={onClear} style={smallBtnStyle}>Clear selection</button>
     </div>
@@ -1248,6 +1400,41 @@ function VendorTagPicker({ label, allVendors, selected, onToggle }) {
     </div>
   );
 }
+
+// Ek hi entry ke liye kai packing materials (jaise pehle Dabbi, uske aage Tray) select
+// karne ke liye simple dropdown-slots — jaise pehle single select tha, bas ab "+ Material"
+// dabane se ek aur dropdown side me aa jaata hai.
+function MaterialSlotPicker({ allItems, selected, onChange, compact }) {
+  const slots = selected.length ? selected : [""];
+  const setSlot = (i, val) => {
+    const next = [...slots];
+    next[i] = val;
+    onChange(next);
+  };
+  const addSlot = () => onChange([...slots, ""]);
+  const removeSlot = (i) => onChange(slots.length > 1 ? slots.filter((_, idx) => idx !== i) : [""]);
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+      {slots.map((val, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <select style={{ ...inputStyle, width: compact ? 130 : 160 }} value={val} onChange={e => setSlot(i, e.target.value)}>
+            <option value="">Select material</option>
+            {allItems.map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
+          {slots.length > 1 && (
+            <button onClick={() => removeSlot(i)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", padding: 2, display: "flex" }} title="Ye material hatao">
+              <X size={13} />
+            </button>
+          )}
+        </div>
+      ))}
+      <button onClick={addSlot} style={{ ...smallBtnStyle, padding: "6px 10px", fontSize: 12, whiteSpace: "nowrap" }}>
+        <Plus size={11} style={{ marginRight: 3, verticalAlign: -1 }} />Material
+      </button>
+    </div>
+  );
+}
+
 
 function ProductRow({ product, isLast, usageCount, allVendorNames, onSaveNote, onToggleVendor, onDelete }) {
   const isMobile = useIsMobile();
@@ -1431,7 +1618,7 @@ function App() {
   const [loginError, setLoginError] = useState("");
   const [loginChecking, setLoginChecking] = useState(false);
 
-  // Bulk selection (Orders / Packing tabs)
+  // Bulk selection (Orders / Packing / Packing Out tabs)
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkQty, setBulkQty] = useState("");
   const [bulkDate, setBulkDate] = useState(todayStr());
@@ -1534,7 +1721,7 @@ function App() {
 
   useEffect(() => { setSelectedIds([]); }, [tab]);
 
-  // Live auto-sync: agar Google Sheet se connect hai, to har 15 second me
+  // Live auto-sync: agar Google Sheet se connect hai, to har 10 second me
   // background me sheet se latest entries khud-b-khud fetch hoti rahengi,
   // taaki sheet me kisi ne seedha row add/edit/delete ki ho to yaha bhi dikhe.
   useEffect(() => {
@@ -1557,7 +1744,7 @@ function App() {
   }, [webhookUrl, modalOpen]);
 
   const openNew = (kind) => {
-    setEditing({ id: null, kind: kind || "product", vendor: "", product: "", orderQty: "", orderDate: todayStr(), expectedDate: "", receivedQty: "", receivedDate: "", remark: "", contact: "", receipts: [] });
+    setEditing({ id: null, kind: kind || "product", vendor: "", product: "", orderQty: "", orderDate: todayStr(), expectedDate: "", receivedQty: "", receivedDate: "", remark: "", contact: "", poNo: "", urgent: false, sku: "", receipts: [] });
     setModalOpen(true);
   };
   const openEdit = (e) => { setEditing(e); setModalOpen(true); };
@@ -1585,11 +1772,25 @@ function App() {
     }
   };
 
+  // Urgent tick — turant on/off (list me top pe jaake highlight ho jaata hai)
+  const toggleUrgent = (id) => {
+    let updatedEntry = null;
+    setEntries(list => list.map(e => {
+      if (e.id !== id) return e;
+      updatedEntry = { ...e, urgent: !e.urgent };
+      return updatedEntry;
+    }));
+    if (webhookUrl && updatedEntry) {
+      apiUpsert(webhookUrl, updatedEntry).catch(() => setConnStatus("error"));
+    }
+  };
+
   const saveEntry = (form) => {
+    const kind = form.kind || "product";
     if (form.vendor && !vendors.some(v => v.name === form.vendor)) {
       setVendors(v => [...v, { name: form.vendor, contact: form.contact || "" }]);
     }
-    if (form.kind === "packing") {
+    if (kind === "packing" || kind === "packingOut") {
       if (form.product && !packingItems.some(p => p.name === form.product)) {
         setPackingItems(p => [...p, { name: form.product, note: "", vendors: [] }]);
       }
@@ -1605,7 +1806,7 @@ function App() {
       // "Auto Packing" flag on ho to yahi qty ki ek Packing Order entry khud bhi ban jaati hai.
       const vendorObj = vendors.find(v => v.name === form.vendor);
       const extraEntries = [];
-      if (vendorObj && vendorObj.autoPacking && (form.kind || "product") !== "packing") {
+      if (vendorObj && vendorObj.autoPacking && kind === "product") {
         const packingEntry = buildAutoPackingEntry(finalEntry);
         extraEntries.push(packingEntry);
         if (packingEntry.product && !packingItems.some(p => p.name === packingEntry.product)) {
@@ -1636,21 +1837,23 @@ function App() {
     const mainEntries = validRows.map(r => ({
       id: uid(), kind,
       vendor: shared.vendor, contact: shared.contact || "",
-      product: r.product, orderQty: r.orderQty,
+      product: r.product, orderQty: r.orderQty, sku: r.sku || "",
       orderDate: shared.orderDate || "", expectedDate: shared.expectedDate || "",
-      receivedQty: "", receivedDate: "", remark: shared.remark || "", receipts: [],
+      receivedQty: "", receivedDate: "", remark: shared.remark || "",
+      poNo: shared.poNo || "", urgent: !!shared.urgent, receipts: [],
     }));
-    const seenNames = new Set((kind === "packing" ? packingItems : products).map(p => p.name));
+    const isPacking = kind === "packing" || kind === "packingOut";
+    const seenNames = new Set((isPacking ? packingItems : products).map(p => p.name));
     mainEntries.forEach(e => {
       if (e.product && !seenNames.has(e.product)) {
         seenNames.add(e.product);
-        if (kind === "packing") setPackingItems(p => [...p, { name: e.product, note: "", vendors: [] }]);
+        if (isPacking) setPackingItems(p => [...p, { name: e.product, note: "", vendors: [] }]);
         else setProducts(p => [...p, { name: e.product, note: "", vendors: [], packingVendors: [] }]);
       }
     });
     const vendorObj = vendors.find(v => v.name === shared.vendor);
     let autoEntries = [];
-    if (vendorObj && vendorObj.autoPacking && kind !== "packing") {
+    if (vendorObj && vendorObj.autoPacking && kind === "product") {
       const seenPackingNames = new Set(packingItems.map(p => p.name));
       autoEntries = mainEntries.map(buildAutoPackingEntry);
       autoEntries.forEach(pe => {
@@ -1812,6 +2015,22 @@ function App() {
     clearSelection();
   };
 
+  // Bulk: selected orders ko urgent mark / unmark karna
+  const bulkSetUrgent = (val) => {
+    if (selectedIds.length === 0) return;
+    const updated = [];
+    setEntries(list => list.map(e => {
+      if (!selectedIds.includes(e.id)) return e;
+      const ne = { ...e, urgent: val };
+      updated.push(ne);
+      return ne;
+    }));
+    if (webhookUrl && updated.length) {
+      apiBulkUpsert(webhookUrl, updated).catch(() => setConnStatus("error"));
+    }
+    clearSelection();
+  };
+
   const bulkDeleteSelected = () => {
     if (selectedIds.length === 0) return;
     const pwd = window.prompt(`${selectedIds.length} entries delete karne ke liye password daalo:`);
@@ -1951,24 +2170,32 @@ function App() {
 
   const productEntries = useMemo(() => entries.filter(e => (e.kind || "product") === "product"), [entries]);
   const packingEntries = useMemo(() => entries.filter(e => e.kind === "packing"), [entries]);
+  const packingOutEntries = useMemo(() => entries.filter(e => e.kind === "packingOut"), [entries]);
 
   const filtered = useMemo(() => {
-    const base = tab === "packing" ? packingEntries : productEntries;
-    return base.filter(e => {
+    const base = tab === "packing" ? packingEntries : tab === "packingOut" ? packingOutEntries : productEntries;
+    const result = base.filter(e => {
       if (vendorFilter !== "all" && e.vendor !== vendorFilter) return false;
-      if (statusFilter !== "all") {
+      if (statusFilter !== "all" && tab !== "packingOut") {
         if (statusFilter === "overdue" && !isOverdue(e)) return false;
         if (statusFilter !== "overdue" && getStatus(e) !== statusFilter) return false;
       }
       if (search) {
         const q = search.toLowerCase();
-        if (!(e.vendor?.toLowerCase().includes(q) || e.product?.toLowerCase().includes(q) || e.remark?.toLowerCase().includes(q))) return false;
+        const sVendor = e.vendor ? String(e.vendor).toLowerCase() : "";
+        const sProduct = e.product ? String(e.product).toLowerCase() : "";
+        const sRemark = e.remark ? String(e.remark).toLowerCase() : "";
+        const sPoNo = e.poNo ? String(e.poNo).toLowerCase() : "";
+        const sSku = e.sku ? String(e.sku).toLowerCase() : "";
+        if (!(sVendor.includes(q) || sProduct.includes(q) || sRemark.includes(q) || sPoNo.includes(q) || sSku.includes(q))) return false;
       }
       if (dateFrom && e.orderDate && e.orderDate < dateFrom) return false;
       if (dateTo && e.orderDate && e.orderDate > dateTo) return false;
       return true;
-    }).sort((a, b) => (b.orderDate || "").localeCompare(a.orderDate || ""));
-  }, [tab, productEntries, packingEntries, vendorFilter, statusFilter, search, dateFrom, dateTo]);
+    });
+    // Urgent entries hamesha top pe — baaki naye order date se sabse upar
+    return sortWithUrgentFirst(result, (a, b) => (b.orderDate || "").localeCompare(a.orderDate || ""));
+  }, [tab, productEntries, packingEntries, packingOutEntries, vendorFilter, statusFilter, search, dateFrom, dateTo]);
 
   const stats = useMemo(() => makeStats(productEntries), [productEntries]);
   const packingStats = useMemo(() => makeStats(packingEntries), [packingEntries]);
@@ -1976,6 +2203,7 @@ function App() {
   const packingVendorChartData = useMemo(() => makeVendorChart(packingEntries), [packingEntries]);
   const statusPieData = useMemo(() => makeStatusPie(productEntries), [productEntries]);
   const packingStatusPieData = useMemo(() => makeStatusPie(packingEntries), [packingEntries]);
+  const urgentCount = useMemo(() => entries.filter(isUrgent).length, [entries]);
 
   const wrap = {
     background: COLORS.bg, minHeight: 500, color: COLORS.text,
@@ -1995,7 +2223,7 @@ function App() {
     return <LoginScreen onLogin={handleLogin} error={loginError} checking={loginChecking} />;
   }
 
-  const TabBtn = ({ id, label, icon: Icon }) => (
+  const TabBtn = ({ id, label, icon: Icon, badge }) => (
     <button onClick={() => setTab(id)} style={{
       display: "flex", alignItems: "center", gap: 7,
       background: tab === id ? COLORS.amberBg : "transparent",
@@ -2005,11 +2233,24 @@ function App() {
       cursor: "pointer", letterSpacing: 0.2, flexShrink: 0, whiteSpace: "nowrap",
     }}>
       <Icon size={15} /> {label}
+      {!!badge && (
+        <span style={{
+          background: COLORS.urgent, color: "#FFFFFF", borderRadius: 20, fontSize: 10.5,
+          fontWeight: 800, padding: "1px 6px", marginLeft: 2,
+        }}>{badge}</span>
+      )}
     </button>
   );
 
+  const newEntryLabel = tab === "packing" ? "New Packing Entry" : tab === "packingOut" ? "New Packing Out Entry" : "New Entry";
+  const newEntryKind = tab === "packing" ? "packing" : tab === "packingOut" ? "packingOut" : "product";
+
   return (
     <div style={wrap}>
+      <div style={{
+        position: "sticky", top: 0, zIndex: 40, background: COLORS.bg,
+        paddingTop: 2, marginTop: -2, paddingBottom: 2,
+      }}>
       <div style={{
         display: "flex", justifyContent: "space-between",
         alignItems: isMobile ? "stretch" : "flex-start", flexDirection: isMobile ? "column" : "row", flexWrap: "wrap", gap: 14,
@@ -2047,12 +2288,12 @@ function App() {
               background: "rgba(255,255,255,0.14)", color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.3)",
             }}>Logout</button>
           </div>
-          <button onClick={() => openNew(tab === "packing" ? "packing" : "product")} style={{
+          <button onClick={() => openNew(newEntryKind)} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             background: "#FFFFFF", color: COLORS.amber, border: "none", width: isMobile ? "100%" : "auto",
             borderRadius: 9, padding: "11px 16px", fontWeight: 800, fontSize: 13.5, cursor: "pointer",
           }}>
-            <Plus size={16} /> {tab === "packing" ? "New Packing Entry" : "New Entry"}
+            <Plus size={16} /> {newEntryLabel}
           </button>
         </div>
       </div>
@@ -2060,18 +2301,32 @@ function App() {
       <div style={{
         display: "flex", gap: 8, marginBottom: 18, borderBottom: `1px solid ${COLORS.borderSoft}`, paddingBottom: 14,
         flexWrap: isMobile ? "nowrap" : "wrap", overflowX: isMobile ? "auto" : "visible", WebkitOverflowScrolling: "touch",
+        background: COLORS.bg,
       }}>
         <TabBtn id="dashboard" label="Dashboard" icon={LayoutDashboard} />
         <TabBtn id="orders" label="Orders" icon={ClipboardList} />
         <TabBtn id="packing" label="Packing" icon={PackageCheck} />
+        <TabBtn id="packingOut" label="Packing Out" icon={Truck} />
         <TabBtn id="vendors" label="Vendors" icon={Users} />
         <TabBtn id="products" label="Products" icon={Package} />
         <TabBtn id="packingItems" label="Packing Items" icon={Package} />
         <TabBtn id="settings" label="Settings" icon={SettingsIcon} />
       </div>
+      </div>
 
       {tab === "dashboard" && (
         <>
+          {urgentCount > 0 && (
+            <div style={{
+              background: COLORS.urgentBg, border: `1px solid ${COLORS.urgentBorder}`, borderRadius: 12,
+              padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10,
+            }}>
+              <AlertTriangle size={16} color={COLORS.urgent} />
+              <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.urgent }}>
+                {urgentCount} entries URGENT mark ki gayi hai — Orders / Packing / Packing Out tabs me top pe highlight ho rahi hai.
+              </div>
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 18 }}>
             <KPICard label="Total Entries" value={stats.total} sub={`${stats.openCount} open`} color={COLORS.blue} icon={Package} />
             <KPICard label="Pending Qty" value={stats.pendingQty.toLocaleString("en-IN")} sub="units yet to receive" color={COLORS.orange} icon={Clock} />
@@ -2117,8 +2372,8 @@ function App() {
               <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "10px 0" }}>Kuch bhi follow-up ke liye pending nahi hai.</div>
             ) : (
               <OrdersTable
-                rows={productEntries.filter(e => isOverdue(e) || getStatus(e) === "pending").sort((a, b) => (a.expectedDate || "").localeCompare(b.expectedDate || ""))}
-                onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark} compact
+                rows={sortWithUrgentFirst(productEntries.filter(e => isOverdue(e) || getStatus(e) === "pending"), (a, b) => (a.expectedDate || "").localeCompare(b.expectedDate || ""))}
+                onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark} onToggleUrgent={toggleUrgent} compact
               />
             )}
           </div>
@@ -2160,17 +2415,29 @@ function App() {
               )}
             </div>
           </div>
+
+          <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.text, margin: "22px 0 10px" }}>PACKING OUT (Dispatched to vendors)</div>
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16 }}>
+            {packingOutEntries.length === 0 ? (
+              <div style={{ color: COLORS.textMuted, fontSize: 13, padding: "10px 0" }}>Abhi tak koi packing material vendor ko dispatch nahi ki gayi.</div>
+            ) : (
+              <PackingOutTable
+                rows={sortWithUrgentFirst(packingOutEntries, (a, b) => (b.orderDate || "").localeCompare(a.orderDate || "")).slice(0, 8)}
+                onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark} onToggleUrgent={toggleUrgent} compact
+              />
+            )}
+          </div>
         </>
       )}
 
-      {tab === "orders" && (
+      {(tab === "orders" || tab === "packing" || tab === "packingOut") && (
         <>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, alignItems: "center" }}>
             <div style={{ position: "relative", flex: "1 1 200px" }}>
               <Search size={14} style={{ position: "absolute", left: 10, top: 11, color: COLORS.textMuted }} />
               <input
                 style={{ ...inputStyle, paddingLeft: 30 }}
-                placeholder="Vendor, product ya remark search karo..."
+                placeholder="Vendor, product, PO No ya remark search karo..."
                 value={search} onChange={e => setSearch(e.target.value)}
               />
             </div>
@@ -2178,13 +2445,15 @@ function App() {
               <option value="all">All vendors</option>
               {vendors.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
             </select>
-            <select style={{ ...inputStyle, flex: "1 1 120px", minWidth: 110 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option value="all">All status</option>
-              <option value="pending">Pending</option>
-              <option value="partial">Partial</option>
-              <option value="completed">Completed</option>
-              <option value="overdue">Overdue</option>
-            </select>
+            {tab !== "packingOut" && (
+              <select style={{ ...inputStyle, flex: "1 1 120px", minWidth: 110 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                <option value="all">All status</option>
+                <option value="pending">Pending</option>
+                <option value="partial">Partial</option>
+                <option value="completed">Completed</option>
+                <option value="overdue">Overdue</option>
+              </select>
+            )}
             <input type="date" style={{ ...inputStyle, flex: "1 1 130px", minWidth: 120 }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} title="From order date" />
             <input type="date" style={{ ...inputStyle, flex: "1 1 130px", minWidth: 120 }} value={dateTo} onChange={e => setDateTo(e.target.value)} title="To order date" />
             {(vendorFilter !== "all" || statusFilter !== "all" || search || dateFrom || dateTo) && (
@@ -2195,7 +2464,7 @@ function App() {
           </div>
 
           <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
-            {filtered.length} of {entries.length} entries dikh rahe hai · checkbox se select karke bulk update kar sakte ho
+            {filtered.length} of {tab === "packing" ? packingEntries.length : tab === "packingOut" ? packingOutEntries.length : entries.filter(e => (e.kind||"product")==="product").length} entries dikh rahe hai · checkbox se select karke bulk update kar sakte ho
           </div>
 
           <BulkActionBar
@@ -2204,76 +2473,27 @@ function App() {
             bulkDate={bulkDate} setBulkDate={setBulkDate}
             bulkRemark={bulkRemark} setBulkRemark={setBulkRemark}
             onAddReceipt={bulkAddReceipt} onSetRemark={bulkSetRemark}
-            onMarkCompleted={bulkMarkCompleted} onDelete={bulkDeleteSelected}
+            onMarkCompleted={bulkMarkCompleted}
+            onMarkUrgent={() => bulkSetUrgent(true)} onUnmarkUrgent={() => bulkSetUrgent(false)}
+            onDelete={bulkDeleteSelected}
             onClear={clearSelection}
+            showReceipt={tab !== "packingOut"} showCompleted={tab !== "packingOut"}
           />
 
           {filtered.length === 0 ? (
             <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 40, textAlign: "center", color: COLORS.textMuted }}>
-              Koi entry nahi mili. "New Entry" se add karo.
+              Koi entry nahi mili. "{newEntryLabel}" se add karo.
             </div>
-          ) : (
-            <OrdersTable
-              rows={filtered} onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark}
-              onAddReceipt={addReceipt} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
+          ) : tab === "packingOut" ? (
+            <PackingOutTable
+              rows={filtered} onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark} onToggleUrgent={toggleUrgent}
+              selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
             />
-          )}
-        </>
-      )}
-
-      {tab === "packing" && (
-        <>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, alignItems: "center" }}>
-            <div style={{ position: "relative", flex: "1 1 200px" }}>
-              <Search size={14} style={{ position: "absolute", left: 10, top: 11, color: COLORS.textMuted }} />
-              <input
-                style={{ ...inputStyle, paddingLeft: 30 }}
-                placeholder="Vendor, packing item ya remark search karo..."
-                value={search} onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-            <select style={{ ...inputStyle, flex: "1 1 140px", minWidth: 130 }} value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}>
-              <option value="all">All vendors</option>
-              {vendors.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
-            </select>
-            <select style={{ ...inputStyle, flex: "1 1 120px", minWidth: 110 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option value="all">All status</option>
-              <option value="pending">Pending</option>
-              <option value="partial">Partial</option>
-              <option value="completed">Completed</option>
-              <option value="overdue">Overdue</option>
-            </select>
-            <input type="date" style={{ ...inputStyle, flex: "1 1 130px", minWidth: 120 }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} title="From order date" />
-            <input type="date" style={{ ...inputStyle, flex: "1 1 130px", minWidth: 120 }} value={dateTo} onChange={e => setDateTo(e.target.value)} title="To order date" />
-            {(vendorFilter !== "all" || statusFilter !== "all" || search || dateFrom || dateTo) && (
-              <button onClick={() => { setVendorFilter("all"); setStatusFilter("all"); setSearch(""); setDateFrom(""); setDateTo(""); }} style={smallBtnStyle}>
-                Clear filters
-              </button>
-            )}
-          </div>
-
-          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>
-            {filtered.length} of {packingEntries.length} packing entries dikh rahe hai · checkbox se select karke bulk update kar sakte ho
-          </div>
-
-          <BulkActionBar
-            count={selectedIds.length}
-            bulkQty={bulkQty} setBulkQty={setBulkQty}
-            bulkDate={bulkDate} setBulkDate={setBulkDate}
-            bulkRemark={bulkRemark} setBulkRemark={setBulkRemark}
-            onAddReceipt={bulkAddReceipt} onSetRemark={bulkSetRemark}
-            onMarkCompleted={bulkMarkCompleted} onDelete={bulkDeleteSelected}
-            onClear={clearSelection}
-          />
-
-          {filtered.length === 0 ? (
-            <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 40, textAlign: "center", color: COLORS.textMuted }}>
-              Koi packing entry nahi mili. "New Packing Entry" se add karo.
-            </div>
           ) : (
             <OrdersTable
-              rows={filtered} onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark}
+              rows={filtered} onEdit={openEdit} onDelete={deleteEntry} onUpdateRemark={updateRemark} onToggleUrgent={toggleUrgent}
               onAddReceipt={addReceipt} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
+              showSku={tab === "packing"}
             />
           )}
         </>
@@ -2466,7 +2686,7 @@ function App() {
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>Google Sheet Connection</div>
             <div style={{ fontSize: 12.5, color: COLORS.textMuted, marginBottom: 14, lineHeight: 1.6 }}>
               Apne Google Sheet me Apps Script Web App deploy karo (naya Code.gs neeche diya gaya hai), uska URL yaha paste karo. Uske baad
-              Product Orders, Packing Orders, Vendors, Products, Packing Items aur User Details — sab kuch seedha sheet me save/sync hoga.
+              Product Orders, Packing Orders, Packing Out, Vendors, Products, Packing Items aur User Details — sab kuch seedha sheet me save/sync hoga.
               Sheet me kisi ne direct row add/edit ki ho (ya password badla ho), to yeh app har 10 second me khud-b-khud latest data
               utha leta hai — Dashboard bhi khud update ho jaata hai.
             </div>
@@ -2567,7 +2787,7 @@ function App() {
               <li>Deploy &rarr; New deployment &rarr; type: Web app.</li>
               <li>Execute as: Me. Who has access: Anyone.</li>
               <li>Deploy karke jo URL mile, wo yaha paste karke "Connect and load" dabao.</li>
-              <li>Sheet me apne aap "User Details" tab ban jaayega — chaho to wahin se bhi username/password edit kar sakte ho.</li>
+              <li>Sheet me apne aap "Packing Out" aur "User Details" tabs ban jaayenge — chaho to wahin se bhi edit kar sakte ho.</li>
             </ol>
           </div>
         </div>
@@ -2626,7 +2846,7 @@ function ReceiptLog({ entry, onAddReceipt }) {
       {receipts.length === 0 ? (
         <div style={{ fontSize: 12.5, color: COLORS.textMuted, marginBottom: 10 }}>Abhi tak koi part receive nahi hui hai.</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12, maxWidth: 640 }}>
           {receipts.map((r, i) => (
             <div key={r.id || i} style={{ display: "flex", gap: 12, fontSize: 12.5, color: COLORS.textDim }}>
               <span style={{ width: 90, color: COLORS.textMuted }}>{fmtDate(r.date)}</span>
@@ -2636,7 +2856,7 @@ function ReceiptLog({ entry, onAddReceipt }) {
           ))}
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", maxWidth: 640 }}>
         <div style={{ width: 130 }}>
           <div style={{ fontSize: 10.5, color: COLORS.textMuted, marginBottom: 4 }}>Date</div>
           <input type="date" style={{ ...inputStyle, fontSize: 12.5, padding: "7px 9px" }} value={date} onChange={e => setDate(e.target.value)} />
@@ -2664,15 +2884,21 @@ function ReceiptLog({ entry, onAddReceipt }) {
 
 // Phone par table ki jagah card list dikhti hai — chhoti screen par horizontal
 // scroll table se kahi zyada aasan hai use karna.
-function OrderCard({ e, onEdit, onDelete, onUpdateRemark, onAddReceipt, compact, selectable, selected, onToggleSelect }) {
+function OrderCard({ e, onEdit, onDelete, onUpdateRemark, onAddReceipt, onToggleUrgent, compact, selectable, selected, onToggleSelect }) {
   const [expanded, setExpanded] = useState(false);
   const order = Number(e.orderQty) || 0;
   const recv = getReceivedQty(e);
   const pending = Math.max(order - recv, 0);
   const status = isOverdue(e) ? "overdue" : getStatus(e);
+  const urgent = isUrgent(e);
 
   return (
-    <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.borderSoft}`, borderRadius: 12, padding: 14, marginBottom: 10 }}>
+    <div style={{
+      background: urgent ? COLORS.urgentBg : COLORS.panel,
+      border: `1px solid ${urgent ? COLORS.urgentBorder : COLORS.borderSoft}`,
+      borderLeft: urgent ? `4px solid ${COLORS.urgent}` : `1px solid ${COLORS.borderSoft}`,
+      borderRadius: 12, padding: 14, marginBottom: 10,
+    }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", minWidth: 0 }}>
           {selectable && (
@@ -2681,10 +2907,16 @@ function OrderCard({ e, onEdit, onDelete, onUpdateRemark, onAddReceipt, compact,
           <div style={{ minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: 14 }}>{e.vendor}</div>
             <div style={{ fontSize: 12.5, color: COLORS.textDim }}>{e.product}</div>
+            {e.poNo && <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>PO: {e.poNo}</div>}
+            {e.sku && <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>SKU: {e.sku}</div>}
           </div>
         </div>
-        <Badge status={status} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {onToggleUrgent && <UrgentToggleBtn urgent={urgent} onClick={() => onToggleUrgent(e.id)} />}
+          <Badge status={status} />
+        </div>
       </div>
+      {urgent && <div style={{ marginTop: 8 }}><UrgentBadge /></div>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 12, fontSize: 12 }}>
         <div>
@@ -2741,7 +2973,7 @@ function OrderCard({ e, onEdit, onDelete, onUpdateRemark, onAddReceipt, compact,
   );
 }
 
-function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, compact, selectedIds, onToggleSelect, onToggleSelectAll }) {
+function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, onToggleUrgent, compact, selectedIds, onToggleSelect, onToggleSelectAll, showSku = false }) {
   const isMobile = useIsMobile();
   const [expandedId, setExpandedId] = useState(null);
   const selectable = !!(selectedIds && onToggleSelect);
@@ -2759,7 +2991,7 @@ function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, com
         {rows.map(e => (
           <OrderCard
             key={e.id} e={e} onEdit={onEdit} onDelete={onDelete} onUpdateRemark={onUpdateRemark}
-            onAddReceipt={onAddReceipt} compact={compact}
+            onAddReceipt={onAddReceipt} onToggleUrgent={onToggleUrgent} compact={compact}
             selectable={selectable} selected={selectable && selectedIds.includes(e.id)}
             onToggleSelect={() => onToggleSelect(e.id)}
           />
@@ -2778,9 +3010,13 @@ function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, com
                 <input type="checkbox" checked={allSelected} onChange={() => onToggleSelectAll(rows.map(r => r.id))} />
               </th>
             )}
-            {["Vendor", "Product", "Order Qty", "Order Date", "Expected", "Received Qty", "Pending", "Status", "Remark", ""].map((h, i) => (
+            <th style={{ padding: "8px 6px", borderBottom: `1px solid ${COLORS.borderSoft}` }}></th>
+            {(showSku
+              ? ["Vendor", "Product", "PO No", "SKU", "Order Qty", "Order Date", "Expected", "Received Qty", "Pending", "Status", "Remark", ""]
+              : ["Vendor", "Product", "PO No", "Order Qty", "Order Date", "Expected", "Received Qty", "Pending", "Status", "Remark", ""]
+            ).map((h, i) => (
               <th key={i} style={{
-                textAlign: i > 1 && i < 6 ? "right" : "left", padding: "8px 10px",
+                textAlign: ["Order Qty", "Order Date", "Expected", "Received Qty", "Pending"].includes(h) ? "right" : "left", padding: "8px 10px",
                 color: COLORS.textMuted, fontSize: 11, fontWeight: 700, letterSpacing: 0.4,
                 borderBottom: `1px solid ${COLORS.borderSoft}`, whiteSpace: "nowrap",
               }}>{h}</th>
@@ -2794,16 +3030,26 @@ function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, com
             const pending = Math.max(order - recv, 0);
             const status = isOverdue(e) ? "overdue" : getStatus(e);
             const isExpanded = expandedId === e.id;
+            const urgent = isUrgent(e);
             return (
               <React.Fragment key={e.id}>
-                <tr style={{ borderBottom: isExpanded ? "none" : `1px solid ${COLORS.borderSoft}` }}>
+                <tr style={{
+                  borderBottom: isExpanded ? "none" : `1px solid ${COLORS.borderSoft}`,
+                  background: urgent ? COLORS.urgentBg : "transparent",
+                  boxShadow: urgent ? `inset 3px 0 0 ${COLORS.urgent}` : "none",
+                }}>
                   {selectable && (
                     <td style={{ padding: "10px 6px" }}>
                       <input type="checkbox" checked={selectedIds.includes(e.id)} onChange={() => onToggleSelect(e.id)} />
                     </td>
                   )}
+                  <td style={{ padding: "10px 4px" }}>
+                    {onToggleUrgent && <UrgentToggleBtn urgent={urgent} onClick={() => onToggleUrgent(e.id)} />}
+                  </td>
                   <td style={{ padding: "10px 10px", fontWeight: 600 }}>{e.vendor}</td>
                   <td style={{ padding: "10px 10px", color: COLORS.textDim }}>{e.product}</td>
+                  <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{e.poNo || "-"}</td>
+                  {showSku && <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{e.sku || "-"}</td>}
                   <td style={{ padding: "10px 10px", textAlign: "right", fontFamily: "ui-monospace, monospace" }}>{order}</td>
                   <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{fmtDate(e.orderDate)}</td>
                   <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{fmtDate(e.expectedDate)}</td>
@@ -2821,7 +3067,12 @@ function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, com
                     </button>
                   </td>
                   <td style={{ padding: "10px 10px", textAlign: "right", fontFamily: "ui-monospace, monospace", color: pending > 0 ? COLORS.amber : COLORS.textMuted, fontWeight: 700 }}>{pending}</td>
-                  <td style={{ padding: "10px 10px" }}><Badge status={status} /></td>
+                  <td style={{ padding: "10px 10px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                      <Badge status={status} />
+                      {urgent && <UrgentBadge />}
+                    </div>
+                  </td>
                   <td style={{ padding: "10px 10px", minWidth: 150 }}>
                     <RemarkCell entry={e} onUpdateRemark={onUpdateRemark} />
                   </td>
@@ -2841,12 +3092,159 @@ function OrdersTable({ rows, onEdit, onDelete, onUpdateRemark, onAddReceipt, com
                 </tr>
                 {isExpanded && (
                   <tr style={{ borderBottom: `1px solid ${COLORS.borderSoft}` }}>
-                    <td colSpan={selectable ? 10 : 9} style={{ padding: 0 }}>
+                    <td colSpan={(selectable ? 1 : 0) + 1 + (showSku ? 12 : 11)} style={{ padding: 0 }}>
                       <ReceiptLog entry={e} onAddReceipt={onAddReceipt} />
                     </td>
                   </tr>
                 )}
               </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Packing Out — vendor ko bheji gayi packing material ki dispatch entry.
+// Simple one-way log hai: koi "pending/received" concept nahi, bas kya dispatch hui.
+function PackingOutCard({ e, onEdit, onDelete, onUpdateRemark, onToggleUrgent, compact, selectable, selected, onToggleSelect }) {
+  const urgent = isUrgent(e);
+  return (
+    <div style={{
+      background: urgent ? COLORS.urgentBg : COLORS.panel,
+      border: `1px solid ${urgent ? COLORS.urgentBorder : COLORS.borderSoft}`,
+      borderLeft: urgent ? `4px solid ${COLORS.urgent}` : `1px solid ${COLORS.borderSoft}`,
+      borderRadius: 12, padding: 14, marginBottom: 10,
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", minWidth: 0 }}>
+          {selectable && (
+            <input type="checkbox" checked={selected} onChange={onToggleSelect} style={{ marginTop: 3, flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 14 }}>{e.vendor}</div>
+            <div style={{ fontSize: 12.5, color: COLORS.textDim }}>{e.product}</div>
+            {e.poNo && <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>PO: {e.poNo}</div>}
+            {e.sku && <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>SKU: {e.sku}</div>}
+          </div>
+        </div>
+        {onToggleUrgent && <UrgentToggleBtn urgent={urgent} onClick={() => onToggleUrgent(e.id)} />}
+      </div>
+      {urgent && <div style={{ marginTop: 8 }}><UrgentBadge /></div>}
+
+      <div style={{ display: "flex", gap: 18, marginTop: 12, fontSize: 12 }}>
+        <div>
+          <div style={{ color: COLORS.textMuted, fontSize: 10.5, marginBottom: 2 }}>QTY DISPATCHED</div>
+          <div style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{e.orderQty || 0}</div>
+        </div>
+        <div>
+          <div style={{ color: COLORS.textMuted, fontSize: 10.5, marginBottom: 2 }}>DISPATCH DATE</div>
+          <div>{fmtDate(e.orderDate)}</div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        <RemarkCell entry={e} onUpdateRemark={onUpdateRemark} />
+      </div>
+
+      <div style={{ display: "flex", gap: 16, marginTop: 12, borderTop: `1px solid ${COLORS.borderSoft}`, paddingTop: 10 }}>
+        <button onClick={() => onEdit(e)} style={{ background: "none", border: "none", color: COLORS.textDim, fontWeight: 700, fontSize: 12.5, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4 }}>
+          <Pencil size={13} /> Edit
+        </button>
+        {!compact && (
+          <button onClick={() => onDelete(e.id)} style={{ background: "none", border: "none", color: COLORS.red, fontWeight: 700, fontSize: 12.5, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            <Trash2 size={13} /> Delete
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PackingOutTable({ rows, onEdit, onDelete, onUpdateRemark, onToggleUrgent, compact, selectedIds, onToggleSelect, onToggleSelectAll }) {
+  const isMobile = useIsMobile();
+  const selectable = !!(selectedIds && onToggleSelect);
+  const allSelected = selectable && rows.length > 0 && rows.every(r => selectedIds.includes(r.id));
+
+  if (isMobile) {
+    return (
+      <div>
+        {selectable && rows.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 12.5, color: COLORS.textDim }}>
+            <input type="checkbox" checked={allSelected} onChange={() => onToggleSelectAll(rows.map(r => r.id))} />
+            Select all ({rows.length})
+          </div>
+        )}
+        {rows.map(e => (
+          <PackingOutCard
+            key={e.id} e={e} onEdit={onEdit} onDelete={onDelete} onUpdateRemark={onUpdateRemark}
+            onToggleUrgent={onToggleUrgent} compact={compact}
+            selectable={selectable} selected={selectable && selectedIds.includes(e.id)}
+            onToggleSelect={() => onToggleSelect(e.id)}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <thead>
+          <tr>
+            {selectable && (
+              <th style={{ padding: "8px 6px", borderBottom: `1px solid ${COLORS.borderSoft}` }}>
+                <input type="checkbox" checked={allSelected} onChange={() => onToggleSelectAll(rows.map(r => r.id))} />
+              </th>
+            )}
+            <th style={{ padding: "8px 6px", borderBottom: `1px solid ${COLORS.borderSoft}` }}></th>
+            {["Vendor", "Packing Item", "PO No", "SKU", "Qty Dispatched", "Dispatch Date", "Remark", ""].map((h, i) => (
+              <th key={i} style={{
+                textAlign: i === 4 ? "right" : "left", padding: "8px 10px",
+                color: COLORS.textMuted, fontSize: 11, fontWeight: 700, letterSpacing: 0.4,
+                borderBottom: `1px solid ${COLORS.borderSoft}`, whiteSpace: "nowrap",
+              }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(e => {
+            const urgent = isUrgent(e);
+            return (
+              <tr key={e.id} style={{
+                borderBottom: `1px solid ${COLORS.borderSoft}`,
+                background: urgent ? COLORS.urgentBg : "transparent",
+                boxShadow: urgent ? `inset 3px 0 0 ${COLORS.urgent}` : "none",
+              }}>
+                {selectable && (
+                  <td style={{ padding: "10px 6px" }}>
+                    <input type="checkbox" checked={selectedIds.includes(e.id)} onChange={() => onToggleSelect(e.id)} />
+                  </td>
+                )}
+                <td style={{ padding: "10px 4px" }}>
+                  {onToggleUrgent && <UrgentToggleBtn urgent={urgent} onClick={() => onToggleUrgent(e.id)} />}
+                </td>
+                <td style={{ padding: "10px 10px", fontWeight: 600 }}>{e.vendor}</td>
+                <td style={{ padding: "10px 10px", color: COLORS.textDim }}>{e.product}</td>
+                <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{e.poNo || "-"}</td>
+                <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{e.sku || "-"}</td>
+                <td style={{ padding: "10px 10px", textAlign: "right", fontFamily: "ui-monospace, monospace" }}>{e.orderQty || 0}</td>
+                <td style={{ padding: "10px 10px", color: COLORS.textMuted, whiteSpace: "nowrap" }}>{fmtDate(e.orderDate)}</td>
+                <td style={{ padding: "10px 10px", minWidth: 150 }}>
+                  <RemarkCell entry={e} onUpdateRemark={onUpdateRemark} />
+                </td>
+                <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                  <button onClick={() => onEdit(e)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", marginRight: 8 }}>
+                    <Pencil size={14} />
+                  </button>
+                  {!compact && (
+                    <button onClick={() => onDelete(e.id)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer" }}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </td>
+              </tr>
             );
           })}
         </tbody>
